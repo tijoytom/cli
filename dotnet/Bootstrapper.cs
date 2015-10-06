@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace dotnet
 {
-    public class Bootstrapper
+    public class Bootstrapper : IBootstrapper
     {
         public int Start(string[] args)
         {
@@ -13,7 +13,7 @@ namespace dotnet
             return 1;
         }
 
-        private static bool ExecuteCommand(string[] args)
+        public bool ExecuteCommand(string[] args)
         {
             var commandName = args[0];
             var processName = "dotnet" + "-" + commandName;
@@ -33,7 +33,7 @@ namespace dotnet
             return ProcessStart(processInfo);
         }
 
-        private static bool ProcessStart(ProcessStartInfo processSettings)
+        public bool ProcessStart(ProcessStartInfo processSettings)
         {
             try
             {

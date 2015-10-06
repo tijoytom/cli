@@ -1,32 +1,30 @@
 ﻿using Xunit;
 
-namespace dotnet
+namespace dotnet.test
 {
     class TestDotnetCommandDiscovery
     {
         [Fact]
-        public void NoArguments()
+        public void NoCommand()
         {
-            var bootstrapper = new Bootstrapper();
             var args = new string[0];
+            IBootstrapper bootstrapper = new Bootstrapper();
             Assert.Equal(0, bootstrapper.Start(args));
         }
 
         [Fact]
         public void CommandExists()
         {
-            var bootstrapper = new Bootstrapper();
-            var args = new string[1];
-            args[0] = "ls";
+            var args = new[] { "ls" };
+            IBootstrapper bootstrapper = new Bootstrapper();
             Assert.Equal(0, bootstrapper.Start(args));
         }
 
         [Fact]
         public void CommandDoesNotExist()
         {
-            var bootstrapper = new Bootstrapper();
-            var args = new string[1];
-            args[0] = "commandNotFound";
+            var args = new [] { "commandNotFound" };
+            IBootstrapper bootstrapper = new Bootstrapper();
             Assert.Equal(1, bootstrapper.Start(args));
         }
     }

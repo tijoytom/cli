@@ -88,8 +88,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Bootstrapper.cs" />
+    <Compile Include="IBootstrapper.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="TestDotnetCommandDiscovery.cs" />
+    <Compile Include="test\TestDotnetCommandDiscovery.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
