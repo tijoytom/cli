@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using Microsoft.Dnx.Runtime.Common.CommandLine;
+using Microsoft.DotNet.ProjectModel;
 using NuGet.Frameworks;
 
 namespace Microsoft.DotNet.Tools.DependencyResolver
@@ -38,15 +39,6 @@ namespace Microsoft.DotNet.Tools.DependencyResolver
                     return 1;
                 }
 
-                // Build target name
-                var fx = NuGetFramework.Parse(framework.Value());
-                var target = fx.DotNetFrameworkName;
-                if (runtime.HasValue())
-                {
-                    target += "/" + runtime.Value();
-                }
-                Console.Error.WriteLine($"Using lock file target: {target}");
-
                 // Determine packages folder
                 var packagesDirs = packages.Values;
                 if (!packagesDirs.Any())
@@ -66,15 +58,10 @@ namespace Microsoft.DotNet.Tools.DependencyResolver
                 }
 
                 var path = project.Value ?? Directory.GetCurrentDirectory();
-                if (path.EndsWith("project.json"))
-                {
-                    path = Path.Combine(Path.GetDirectoryName(path), "project.lock.json");
-                }
-                else if (!path.EndsWith("project.lock.json"))
-                {
-                    path = Path.Combine(path, "project.lock.json");
-                }
-                return Resolver.Execute(packagesDirs, target, output.Value(), assetType.Values, path);
+                var projectContext = ProjectContext.CreateAsync(path,
+                    NuGetFramework.Parse(framework.Value()),
+                    runtime.Value());
+                return Resolver.Execute(packagesDirs, output.Value(), assetType.Values, projectContext);
             });
 
             app.Execute(args);

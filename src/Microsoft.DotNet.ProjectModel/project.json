@@ -1,0 +1,23 @@
+﻿{
+    "version": "1.0.0-*",
+    "description": "Microsoft.DotNet.ProjectModel Class Library",
+    "authors": [ "Andrew" ],
+    "tags": [ "" ],
+    "projectUrl": "",
+    "licenseUrl": "",
+
+    "dependencies": {
+        "System.Runtime.InteropServices.RuntimeInformation": "4.0.0-*",
+        "Microsoft.CSharp": "4.0.0-*",
+
+        "Microsoft.Extensions.FileSystemGlobbing": "1.0.0-*",
+
+        "NuGet.Frameworks": "3.2.0",
+        "NuGet.Packaging.Core": "3.2.0",
+        "Newtonsoft.Json": "7.0.1"
+    },
+
+    "frameworks": {
+        "dnxcore50": { }
+    }
+}

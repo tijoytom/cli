@@ -1,23 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
+using Microsoft.DotNet.ProjectModel;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.DotNet.Tools.DependencyResolver
 {
     public static class Resolver
     {
-        public static int Execute(IEnumerable<string> packageDirectories, string targetName, string output, IEnumerable<string> assetTypes, string lockFilePath)
+        public static int Execute(IEnumerable<string> packageDirectories, string output, IEnumerable<string> assetTypes, ProjectContext project)
         {
-            // Open the lock file
-            var lockFile = JObject.Parse(File.ReadAllText(lockFilePath));
-
-            // Locate the target
-            var target = lockFile["targets"][targetName] as JObject;
-            if (target == null)
+            // Resolve assets for the project
+            foreach(var assetType in assetTypes)
             {
-                Console.Error.WriteLine($"Could not find target in lock file: {target}");
-                return 1;
+                foreach(var asset in project.ResolveAssets(assetType))
+                {
+
+                }
             }
 
             // Iterate over each package and prepare the dependency data

@@ -12,6 +12,8 @@
     "System.Linq": "4.0.1-*",
     "System.Diagnostics.Process": "4.1.0-*",
     "System.IO.FileSystem": "4.0.1-*",
+
+    "Microsoft.DotNet.ProjectModel": "1.0.0-*",
     "Microsoft.DotNet.Cli.Utils": {
       "type": "build",
       "version": "1.0.0-*"
