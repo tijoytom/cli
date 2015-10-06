@@ -1,0 +1,16 @@
+﻿{
+  "dependencies": {
+    "Microsoft.NetCore.Console": "1.0.0-beta-23321",
+    "System.IO.Compression": "4.0.1-beta-23321",
+    "Newtonsoft.Json": "7.0.1",
+    "xunit": "2.1.0"
+  },
+  "frameworks": {
+    "dnxcore50": {}
+  },
+  "runtimes": {
+    "win7-x86": { },
+    "win7-x64": { },
+    "ubuntu.14.04-x64": { }
+  }
+}
