@@ -17,19 +17,20 @@ namespace dotnet_lib
         public int Start(string[] args)
         {
             if (args.Length == 0) return 0;
+
             var processName = "dotnet-" + args[0];
-            var commandPath = FindCommand(processName);
+            var commandPath = FindCommandPath(processName);
 
             if (!string.IsNullOrEmpty(commandPath))
             {
-                return ExecuteCommand(args, commandPath);
+                return IsCommandAScript(commandPath) ? ExecuteScript(args, commandPath) : ExecuteCommand(args, commandPath);
             }
 
             Console.WriteLine("donet: '{0}' is not a dotnet command. See 'dotnet help'.", args[0]);
             return 1;
         }
 
-        private static string FindCommand(string processName)
+        private static string FindCommandPath(string processName)
         {
             var paths = FindPaths.GetPathDirectories();
             paths.Add(Directory.GetCurrentDirectory());
@@ -46,36 +47,49 @@ namespace dotnet_lib
             return "";
         }
 
-        private int ExecuteCommand(string[] args, string commandPath)
+        private static bool IsCommandAScript(string commandPath)
         {
-            var isScript = false;
+            var firstLine = File.ReadLines(commandPath).FirstOrDefault();
+            return firstLine != null && firstLine.StartsWith("#!");
+        }
+
+        private int ExecuteScript(string[] args, string commandPath)
+        {
             var commandArguments = new string[args.Length - 1];
             Array.Copy(args, 1, commandArguments, 0, commandArguments.Length);
 
-            var processName = Path.GetFileNameWithoutExtension(commandPath);
+            var tokens = File.ReadLines(commandPath).First().Split(' ');
+            var scriptRunner = tokens[0].Replace("#!", "");
 
-            var line = File.ReadLines(commandPath).First();
-            var scriptRunner = "";
-            var arguments = "";
+            var scriptArguments = new string[tokens.Length - 1];
+            Array.Copy(tokens, 1, scriptArguments, 0, scriptArguments.Length);
 
-            if (line.StartsWith("#!"))
-            {
-                isScript = true;
-                var tokens = line.Split(' ');
-                scriptRunner = tokens[0].Replace("#!", "");
-
-                var scriptArguments = new string[tokens.Length - 1];
-                Array.Copy(tokens, 1, scriptArguments, 0, scriptArguments.Length);
-                arguments += string.Join(" ", scriptArguments.Select(s => $"\"{s}\""));
-                arguments += processName;
-            }
-
+            var arguments = string.Join(" ", scriptArguments.Select(s => $"\"{s}\""));
+            arguments += " " + Path.GetFileNameWithoutExtension(commandPath) + " ";
             arguments += string.Join(" ", commandArguments.Select(s => $"\"{s}\""));
 
             var processInfo = new ProcessStartInfo
             {
-                FileName = isScript ? scriptRunner : processName,
+                FileName = scriptRunner,
                 Arguments = arguments,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            };
+
+            return _processStarter.Start(processInfo);
+        }
+
+        private int ExecuteCommand(string[] args, string commandPath)
+        {
+            var commandArguments = new string[args.Length - 1];
+            Array.Copy(args, 1, commandArguments, 0, commandArguments.Length);
+
+            var processInfo = new ProcessStartInfo
+            {
+                FileName = Path.GetFileNameWithoutExtension(commandPath),
+                Arguments = string.Join(" ", commandArguments.Select(s => $"\"{s}\"")),
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,

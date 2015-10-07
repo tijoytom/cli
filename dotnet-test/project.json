@@ -1,8 +1,6 @@
 ﻿{
   "dependencies": {
-    "Autofac": "3.5.2",
     "Autofac.Extras.Moq": "3.1.0",
-    "Moq": "4.2.1507.118",
     "System.Diagnostics.Process": "4.0.0-beta-23225",
     "xunit": "2.1.0",
     "xunit.extensibility.execution": "2.1.0",
@@ -15,6 +13,6 @@
   "runtimes": {
     "win7-x86": {},
     "win7-x64": {},
-    "win-anycpu": {}
+    "win-x64": {}
   }
 }

@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
 using Autofac.Extras.Moq;
 using dotnet_lib;
 using Moq;
@@ -33,11 +36,54 @@ namespace dotnet_test
                     });
 
                 var bootStrapper = container.Create<Bootstrapper>();
+                //SetupTest();
                 int actual = bootStrapper.Start(new[] {"dir"});
                 Assert.Equal(startProc.FileName, "dotnet-dir");
                 Assert.Equal(startProc.Arguments, "");
                 Assert.Equal(0, actual);
+                //CleanupTest();
             }
+            
+        }
+
+        private static void SetupTest()
+        {
+            var dir = Path.Combine(Directory.GetCurrentDirectory(), "temp");
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+                
+            var fileName = Path.Combine(dir, "dotnet-dir.exe");
+  
+            if (File.Exists(fileName))
+            {
+                File.Delete(fileName);
+            }
+            using (File.Create(fileName)) { }
+
+            var value = Environment.GetEnvironmentVariable("PATH") + ";" + dir;
+            if (!value.Contains(";" + dir))
+            {
+                Console.WriteLine(value);
+                Environment.SetEnvironmentVariable("PATH", value);
+            }
+        }
+
+        private static void CleanupTest()
+        {
+            var dir = Path.Combine(Directory.GetCurrentDirectory(), "temp");
+            if (Directory.Exists(dir))
+            {
+                Directory.Delete(dir, true);
+            }
+
+            var value = Environment.GetEnvironmentVariable("PATH");
+            if (string.IsNullOrEmpty(value)) return;
+
+            value = value.Replace(";" + dir, "");
+            Console.WriteLine(value);
+            Environment.SetEnvironmentVariable("PATH", value);
         }
 
         [Fact]
@@ -54,10 +100,12 @@ namespace dotnet_test
                     });
 
                 var bootStrapper = container.Create<Bootstrapper>();
+                //SetupTest();
                 int actual = bootStrapper.Start(new[] {"dir", "testArg"});
                 Assert.Equal(startProc.FileName, "dotnet-dir");
-                Assert.Equal(startProc.Arguments, "testArg");
+                Assert.Equal(startProc.Arguments, "\"testArg\"");
                 Assert.Equal(2, actual);
+                //CleanupTest();
             }
         }
 

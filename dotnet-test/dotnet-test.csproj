@@ -50,12 +50,16 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup>
+    <CopyNuGetImplementations>true</CopyNuGetImplementations>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="TestCommandDiscovery.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="project.json" />
+    <None Include="project.lock.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\dotnet-lib\dotnet-lib.csproj">
