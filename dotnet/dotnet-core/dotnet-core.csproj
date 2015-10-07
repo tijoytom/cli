@@ -87,15 +87,18 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Bootstrapper.cs" />
-    <Compile Include="IBootstrapper.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="test\TestDotnetCommandDiscovery.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
     <None Include="project.json" />
     <None Include="project.lock.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\dotnet-lib\dotnet-lib.csproj">
+      <Project>{b08a59c3-b3e5-4a64-b3ef-57ef25b34b1a}</Project>
+      <Name>dotnet-lib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
