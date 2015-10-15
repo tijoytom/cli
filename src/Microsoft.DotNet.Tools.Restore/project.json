@@ -1,0 +1,21 @@
+﻿{
+    "version": "1.0.0-*",
+
+    "dependencies": {
+        "Microsoft.CSharp": "4.0.1-*",
+        "System.Collections": "4.0.11-*",
+        "System.Console": "4.0.0-*",
+        "System.Linq": "4.0.1-*",
+        "System.Threading": "4.0.11-*",
+
+        "NuGet.Commands": "3.2.0"
+    },
+
+    "commands": {
+        "dotnet-restore": "Microsoft.DotNet.Tools.Restore"
+    },
+
+    "frameworks": {
+        "dnxcore50": { }
+    }
+}
