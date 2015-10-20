@@ -55,8 +55,12 @@ echo Building stage1 dotnet-publish.exe ...
 dotnet-publish --framework dnxcore50 --runtime %RID% --output "%STAGE1_DIR%" "%REPOROOT%\src\Microsoft.DotNet.Tools.Publish"
 if errorlevel 1 goto fail
 
-echo Building stage1 dotnet-publish.exe ...
+echo Building stage1 dotnet-resgen.exe ...
 dotnet-publish --framework dnxcore50 --runtime %RID% --output "%STAGE1_DIR%" "%REPOROOT%\src\Microsoft.DotNet.Tools.Resgen"
+if errorlevel 1 goto fail
+
+echo Building stage1 dotnet-init-web.exe ...
+dotnet-publish --framework dnxcore50 --runtime %RID% --output "%STAGE1_DIR%" "%REPOROOT%\src\Microsoft.DotNet.Tools.InitWeb"
 if errorlevel 1 goto fail
 
 echo Re-building dotnet tools with the bootstrapped version
@@ -81,8 +85,12 @@ echo Building stage2 dotnet-publish.exe ...
 dotnet publish --framework dnxcore50 --runtime %RID% --output "%STAGE2_DIR%" "%REPOROOT%\src\Microsoft.DotNet.Tools.Publish"
 if errorlevel 1 goto fail
 
-echo Building stage2 dotnet-publish.exe ...
+echo Building stage2 dotnet-resgen.exe ...
 dotnet publish --framework dnxcore50 --runtime %RID% --output "%STAGE2_DIR%" "%REPOROOT%\src\Microsoft.DotNet.Tools.Resgen"
+if errorlevel 1 goto fail
+
+echo Building stage2 dotnet-init-web.exe ...
+dotnet publish --framework dnxcore50 --runtime %RID% --output "%STAGE2_DIR%" "%REPOROOT%\src\Microsoft.DotNet.Tools.InitWeb"
 if errorlevel 1 goto fail
 
 echo Bootstrapped dotnet to %STAGE2_DIR%
