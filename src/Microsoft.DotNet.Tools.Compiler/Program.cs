@@ -198,26 +198,24 @@ namespace Microsoft.DotNet.Tools.Compiler
             File.WriteAllLines(rsp, compilerArgs);
 
             var result = Command.Create($"dotnet-compile-{compiler}", $"\"{rsp}\"")
-                                 .ForwardStdErr()
-                                 .ForwardStdOut()
-                                 //.OnErrorLine(line =>
-                                 //{
-                                     //var diagnostic = ParseDiagnostic(context.ProjectDirectory, line);
-                                     //if (diagnostic != null)
-                                     //{
-                                         //diagnostics.Add(diagnostic);
-                                     //}
-                                 //})
-                                 //.OnOutputLine(line =>
-                                 //{
-                                     //var diagnostic = ParseDiagnostic(context.ProjectDirectory, line);
+                .OnErrorLine(line =>
+                {
+                    var diagnostic = ParseDiagnostic(context.ProjectDirectory, line);
+                    if (diagnostic != null)
+                    {
+                        diagnostics.Add(diagnostic);
+                    }
+                })
+                .OnOutputLine(line =>
+                {
+                    var diagnostic = ParseDiagnostic(context.ProjectDirectory, line);
 
-                                     //if (diagnostic != null)
-                                     //{
-                                         //diagnostics.Add(diagnostic);
-                                     //}
-                                 //})
-                                 .Execute();
+                    if (diagnostic != null)
+                    {
+                        diagnostics.Add(diagnostic);
+                    }
+                })
+                .Execute();
 
             foreach (var diag in diagnostics)
             {
