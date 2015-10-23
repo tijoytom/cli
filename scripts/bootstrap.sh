@@ -2,8 +2,6 @@
 
 set -e
 
-CONFIGURAITON=$1
-
 [ -z "$CONFIGURATION" ] && CONFIGURATION=Debug
 
 # TODO: Replace this with a dotnet generation
