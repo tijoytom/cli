@@ -71,6 +71,8 @@ if ! type dnx > /dev/null 2>&1; then
     exit 1
 fi
 
+DNX_ROOT=$(dirname $(which dnx))
+
 echo "Running 'dnu restore' to restore packages"
 
 dnu restore "$REPOROOT" --runtime osx.10.10-x64 --runtime ubuntu.14.04-x64 --runtime osx.10.11-x64
@@ -105,7 +107,6 @@ dotnet publish --framework "$TFM" --runtime $RID --output "$STAGE2_DIR" --config
 chmod -R a+r $REPOROOT
 
 # Copy DNX in to stage2
-DNX_ROOT=$(dirname $(which dnx))
 cp -R $DNX_ROOT $STAGE2_DIR/dnx
 
 # Clean up some things we don't need
