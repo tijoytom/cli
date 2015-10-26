@@ -6,16 +6,22 @@
 
 pal::string_t get_tpafile_path(const pal::string_t& app_base, const pal::string_t& app_name)
 {
-    pal::char_t buf[app_base.length() + app_name.length() + 6];
+    pal::char_t buf[PATH_MAX];
 
-    auto idx = 0;
+    size_t idx = 0;
+
+#pragma warning(disable: 4996) // Possibly unsafe copy
     app_base.copy(buf, app_base.length());
+#pragma warning(default: 4996)
+
     idx += app_base.length();
 
     buf[idx] = DIR_SEPARATOR[0];
     idx++;
 
+#pragma warning(disable: 4996) // Possibly unsafe copy
     app_name.copy(&buf[idx], app_name.length());
+#pragma warning(default: 4996)
     idx += app_name.length();
 
     buf[idx] = _X('.'); buf[idx + 1] = _X('t'); buf[idx + 2] = _X('p'); buf[idx + 3] = _X('a');

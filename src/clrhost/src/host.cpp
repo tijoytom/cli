@@ -7,21 +7,21 @@ int host::run(arguments_t args, pal::string_t app_base, tpafile tpa, trace_write
     tpa.add_from(args.clr_path);
 
     // Build TPA list and search paths
-    std::string tpalist;
+    pal::string_t tpalist;
     tpa.write_tpa_list(tpalist);
 
-    std::string search_paths;
+    pal::string_t search_paths;
     tpa.write_native_paths(search_paths);
 
     // Build CoreCLR properties
-    const char *property_keys[] = {
-        "TRUSTED_PLATFORM_ASSEMBLIES",
-        "APP_PATHS",
-        "APP_NI_PATHS",
-        "NATIVE_DLL_SEARCH_DIRECTORIES",
-        "AppDomainCompatSwitch"
+    const pal::char_t *property_keys[] = {
+        _X("TRUSTED_PLATFORM_ASSEMBLIES"),
+        _X("APP_PATHS"),
+        _X("APP_NI_PATHS"),
+        _X("NATIVE_DLL_SEARCH_DIRECTORIES"),
+        _X("AppDomainCompatSwitch")
     };
-    const char *property_values[] = {
+    const pal::char_t *property_values[] = {
         // TRUSTED_PLATFORM_ASSEMBLIES
         tpalist.c_str(),
         // APP_PATHS
@@ -31,7 +31,7 @@ int host::run(arguments_t args, pal::string_t app_base, tpafile tpa, trace_write
         // NATIVE_DLL_SEARCH_DIRECTORIES
         search_paths.c_str(),
         // AppDomainCompatSwitch
-        "UseLatestBehaviorWhenTFMNotSpecified"
+        _X("UseLatestBehaviorWhenTFMNotSpecified")
     };
 
     // Bind CoreCLR
@@ -46,7 +46,7 @@ int host::run(arguments_t args, pal::string_t app_base, tpafile tpa, trace_write
     unsigned int domain_id;
     auto hr = coreclr.initialize(
             args.managed_application.c_str(),
-            "clrhost",
+            _X("clrhost"),
             property_keys,
             property_values,
             sizeof(property_keys) / sizeof(property_keys[0]),

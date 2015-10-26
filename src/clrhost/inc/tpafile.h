@@ -26,8 +26,7 @@ public:
 
     void add_from(const pal::string_t& dir);
     void write_tpa_list(pal::string_t& output);
-    void write_native_paths(std::string& output);
-    void set_package_paths(std::vector<pal::string_t> search_paths) { m_package_search_paths = search_paths; }
+    void write_native_paths(pal::string_t& output);
 
 private:
     tpafile(bool present, std::vector<tpaentry_t> entries) : m_present(present), m_entries(entries) {}

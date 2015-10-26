@@ -1,9 +1,5 @@
 #include "pal.h"
 
-#if defined(_WIN32)
-
-#else
-
 #include <dlfcn.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -179,4 +175,3 @@ int pal::coreclr::execute_assembly(
             managed_assembly_path,
             exit_code);
 }
-#endif // _WIN32

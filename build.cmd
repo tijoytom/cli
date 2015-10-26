@@ -9,6 +9,9 @@ if %ERRORLEVEL% neq 0 (
     goto continue
 )
 
+call %~dp0scripts/cmake-gen.cmd
+if %errorlevel% neq 0 exit /b %errorlevel%
+
 :continue
 call %~dp0scripts/bootstrap.cmd
 if %errorlevel% neq 0 exit /b %errorlevel%

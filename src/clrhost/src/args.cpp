@@ -2,8 +2,8 @@
 
 arguments_t::arguments_t() :
     trace(false),
-    managed_application(""),
-    clr_path(""),
+    managed_application(_X("")),
+    clr_path(_X("")),
     app_argc(0),
     app_argv(nullptr)
 {

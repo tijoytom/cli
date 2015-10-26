@@ -12,7 +12,7 @@ std::tuple<bool, int, pal::string_t> read_field(pal::string_t line, int offset)
     offset++;
 
     // Set up destination buffer (it can't be bigger than the original line)
-    pal::char_t buf[line.length()];
+    pal::char_t buf[PATH_MAX];
     auto buf_offset = 0;
 
     // Iterate through characters in the string
@@ -66,6 +66,7 @@ std::pair<bool, tpafile> tpafile::load(pal::string_t path)
     {
         std::string line;
         std::getline(file, line);
+        auto line_palstr = pal::to_palstring(line);
         if (file.eof())
         {
             break;
@@ -73,12 +74,12 @@ std::pair<bool, tpafile> tpafile::load(pal::string_t path)
 
         auto offset = 0;
 
-        tpaentry_t entry;
+		tpaentry_t entry;
 
-        // Read a field
+		// Read a field
 #define READ_FIELD(name, last) \
             {                                                                   \
-                auto field_res = read_field(line, offset);                      \
+                auto field_res = read_field(line_palstr, offset);               \
                 if (!std::get<0>(field_res))                                    \
                 {                                                               \
                     xerr << "invalid TPA file" << std::endl;                    \
@@ -88,7 +89,7 @@ std::pair<bool, tpafile> tpafile::load(pal::string_t path)
                 entry.name = std::get<2>(field_res);                            \
                 if (!last && line[offset] != ',')                               \
                 {                                                               \
-                    xerr << "missing field in TPA line" << std::endl;          \
+                    xerr << "missing field in TPA line" << std::endl;           \
                     return std::make_pair(false, tpafile(false, entries));      \
                 }                                                               \
                 offset++;                                                       \
@@ -109,11 +110,11 @@ std::pair<bool, tpafile> tpafile::load(pal::string_t path)
 
 void tpafile::add_from(const pal::string_t& dir)
 {
-    const char * const tpa_extensions[] = {
-        ".ni.dll",      // Probe for .ni.dll first so that it's preferred if ni and il coexist in the same dir
-        ".dll",
-        ".ni.exe",
-        ".exe",
+    const pal::char_t * const tpa_extensions[] = {
+        _X(".ni.dll"),      // Probe for .ni.dll first so that it's preferred if ni and il coexist in the same dir
+        _X(".dll"),
+        _X(".ni.exe"),
+        _X(".exe"),
         };
 
     std::set<pal::string_t> added_assemblies;
@@ -146,7 +147,7 @@ void tpafile::add_from(const pal::string_t& dir)
                         tpaentry_t entry;
                         entry.asset_type = pal::string_t(_X("runtime"));
                         entry.library_name = pal::string_t(asm_name);
-                        entry.library_version = pal::string_t("");
+                        entry.library_version = pal::string_t(_X(""));
 
                         pal::string_t relpath(dir);
                         relpath.append(DIR_SEPARATOR);
@@ -161,7 +162,7 @@ void tpafile::add_from(const pal::string_t& dir)
     }
 }
 
-void tpafile::write_tpa_list(std::string& output)
+void tpafile::write_tpa_list(pal::string_t& output)
 {
     std::set<pal::string_t> items;
     for (auto entry : m_entries)
@@ -175,7 +176,7 @@ void tpafile::write_tpa_list(std::string& output)
     }
 }
 
-void tpafile::write_native_paths(std::string& output)
+void tpafile::write_native_paths(pal::string_t& output)
 {
     std::set<pal::string_t> items;
     for (auto entry : m_entries)
