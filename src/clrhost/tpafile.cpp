@@ -88,7 +88,7 @@ std::pair<bool, tpafile> tpafile::load(pal::string_t path)
                 entry.name = std::get<2>(field_res);                            \
                 if (!last && line[offset] != ',')                               \
                 {                                                               \
-                    xerr << "missing fields in TPA line" << std::endl;          \
+                    xerr << "missing field in TPA line" << std::endl;          \
                     return std::make_pair(false, tpafile(false, entries));      \
                 }                                                               \
                 offset++;                                                       \
@@ -96,7 +96,10 @@ std::pair<bool, tpafile> tpafile::load(pal::string_t path)
         READ_FIELD(asset_type, false)
         READ_FIELD(library_name, false)
         READ_FIELD(library_version, false)
-        READ_FIELD(relative_path, true)
+        READ_FIELD(library_hash, false)
+        READ_FIELD(relative_path, false)
+        READ_FIELD(absolute_path, false)
+        READ_FIELD(asset_name, true)
 
         entries.push_back(entry);
     }
@@ -164,11 +167,11 @@ void tpafile::write_tpa_list(std::string& output)
     std::set<pal::string_t> items;
     for (auto entry : m_entries)
     {
-        if (pal::strcmp(entry.asset_type.c_str(), _X("runtime")) == 0 && items.find(entry.relative_path) == items.end())
+        if (pal::strcmp(entry.asset_type.c_str(), _X("runtime")) == 0 && items.find(entry.asset_name) == items.end())
         {
-            output.append(entry.relative_path);
+            output.append(entry.absolute_path);
             output.append(PATH_SEPARATOR);
-            items.insert(entry.relative_path);
+            items.insert(entry.asset_name);
         }
     }
 }
@@ -180,7 +183,7 @@ void tpafile::write_native_paths(std::string& output)
     {
         if (pal::strcmp(entry.asset_type.c_str(), _X("native")) == 0)
         {
-            auto dir = entry.relative_path.substr(0, entry.relative_path.find_last_of(DIR_SEPARATOR));
+            auto dir = entry.absolute_path.substr(0, entry.absolute_path.find_last_of(DIR_SEPARATOR));
             if (items.find(dir) == items.end())
             {
                 output.append(dir);
