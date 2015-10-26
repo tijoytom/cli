@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Dnx.Runtime.Common.CommandLine;
 using Microsoft.DotNet.Cli.Utils;
 using Microsoft.Extensions.ProjectModel;
+using Microsoft.Extensions.ProjectModel.Compilation;
 using NuGet.Frameworks;
 
 namespace Microsoft.DotNet.Tools.Publish
@@ -275,11 +276,11 @@ exec ""$DIR/corerun"" ""$DIR/{context.ProjectFile.Name}.exe"" $*
             return path + trailingCharacter;
         }
 
-        private static void PublishFiles(IEnumerable<string> files, string outputPath)
+        private static void PublishFiles(IEnumerable<LibraryAsset> files, string outputPath)
         {
             foreach (var file in files)
             {
-                File.Copy(file, Path.Combine(outputPath, Path.GetFileName(file)), overwrite: true);
+                File.Copy(file.ResolvedPath, Path.Combine(outputPath, Path.GetFileName(file.ResolvedPath)), overwrite: true);
             }
         }
 

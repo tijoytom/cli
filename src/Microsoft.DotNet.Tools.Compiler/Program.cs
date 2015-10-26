@@ -178,7 +178,7 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             foreach (var dependency in dependencies)
             {
-                compilerArgs.AddRange(dependency.CompilationAssemblies.Select(r => $"-r:\"{r}\""));
+                compilerArgs.AddRange(dependency.CompilationAssemblies.Select(r => $"-r:\"{r.ResolvedPath}\""));
                 compilerArgs.AddRange(dependency.SourceReferences.Select(s => $"\"{s}\""));
             }
 
@@ -251,13 +251,16 @@ namespace Microsoft.DotNet.Tools.Compiler
             // CopyHost(Path.Combine(outputPath, outputName + ".exe"));
         }
 
-        private static IEnumerable<string> GenerateLines(LibraryExport export, IEnumerable<string> items, string type)
+        private static IEnumerable<string> GenerateLines(LibraryExport export, IEnumerable<LibraryAsset> items, string type)
         {
             return items.Select(item =>
                 EscapeCsv(type) + "," +
                 EscapeCsv(export.Library.Identity.Name) + "," +
                 EscapeCsv(export.Library.Identity.Version.ToNormalizedString()) + "," +
-                EscapeCsv(item));
+                EscapeCsv(export.Library.Hash) + "," +
+                EscapeCsv(item.RelativePath) + "," +
+                EscapeCsv(item.ResolvedPath) + "," +
+                EscapeCsv(item.Name));
         }
 
         private static string EscapeCsv(string input)
