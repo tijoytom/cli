@@ -163,7 +163,6 @@ void tpafile::add_from(const pal::string_t& dir)
 
 void tpafile::write_tpa_list(std::string& output)
 {
-    // TODO(anurse): De-dupe and resolve real paths instead of requiring absolute paths
     std::set<pal::string_t> items;
     for (auto entry : m_entries)
     {
