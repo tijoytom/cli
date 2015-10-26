@@ -23,6 +23,7 @@ public:
 
     void add_from(const pal::string_t& dir);
     void write_tpa_list(pal::string_t& output);
+    void write_native_paths(std::string& output);
 
 private:
     tpafile(bool present, std::vector<tpaentry_t> entries) : m_present(present), m_entries(entries) {}

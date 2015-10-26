@@ -12,7 +12,7 @@ pal::string_t get_tpafile_path(const pal::string_t& app_base, const pal::string_
     app_base.copy(buf, app_base.length());
     idx += app_base.length();
 
-    buf[idx] = PATH_SEPARATOR;
+    buf[idx] = DIR_SEPARATOR[0];
     idx++;
 
     app_name.copy(&buf[idx], app_name.length());

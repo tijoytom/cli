@@ -126,7 +126,7 @@ void tpafile::add_from(const pal::string_t& dir)
             if (file.length() > len)
             {
                 // Extract the same amount of text from the end of file name
-                auto file_ext = file.substr((file.length() - len) + 1, len);
+                auto file_ext = file.substr(file.length() - len, len);
 
                 // Check if this file name matches
                 if (pal::strcasecmp(ext, file_ext.c_str()) == 0)
@@ -146,7 +146,7 @@ void tpafile::add_from(const pal::string_t& dir)
                         entry.library_version = pal::string_t("");
 
                         pal::string_t relpath(dir);
-                        relpath.append(PATH_SEPARATOR);
+                        relpath.append(DIR_SEPARATOR);
                         relpath.append(file);
                         entry.relative_path = relpath;
 
@@ -161,9 +161,32 @@ void tpafile::add_from(const pal::string_t& dir)
 void tpafile::write_tpa_list(std::string& output)
 {
     // TODO(anurse): De-dupe and resolve real paths instead of requiring absolute paths
+    std::set<pal::string_t> items;
     for (auto entry : m_entries)
     {
-        output.append(entry.relative_path);
-        output.append(NEWLINE);
+        if (pal::strcmp(entry.asset_type.c_str(), _X("runtime")) == 0 && items.find(entry.relative_path) == items.end())
+        {
+            output.append(entry.relative_path);
+            output.append(PATH_SEPARATOR);
+            items.insert(entry.relative_path);
+        }
+    }
+}
+
+void tpafile::write_native_paths(std::string& output)
+{
+    std::set<pal::string_t> items;
+    for (auto entry : m_entries)
+    {
+        if (pal::strcmp(entry.asset_type.c_str(), _X("native")) == 0)
+        {
+            auto dir = entry.relative_path.substr(0, entry.relative_path.find_last_of(DIR_SEPARATOR));
+            if (items.find(dir) == items.end())
+            {
+                output.append(dir);
+                output.append(PATH_SEPARATOR);
+                items.insert(dir);
+            }
+        }
     }
 }

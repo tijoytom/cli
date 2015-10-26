@@ -226,7 +226,8 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             if (success && compilationOptions.EmitEntryPoint.GetValueOrDefault())
             {
-                EmitHost(outputPath, outputName, exporter);
+                var runtimeContext = ProjectContext.Create(context.ProjectDirectory, context.TargetFramework, new [] { RuntimeIdentifier.Current });
+                EmitHost(outputPath, outputName, runtimeContext.CreateExporter(configuration));
             }
 
             PrintSummary(success, diagnostics);
@@ -261,7 +262,7 @@ namespace Microsoft.DotNet.Tools.Compiler
 
         private static string EscapeCsv(string input)
         {
-            return "\"" + input.Replace("\\", "\\\\").input.Replace("\"", "\\\"") + "\"";
+            return "\"" + input.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
         }
 
         private static void PrintSummary(bool success, List<DiagnosticMessage> diagnostics)

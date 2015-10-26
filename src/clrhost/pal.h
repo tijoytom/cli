@@ -8,11 +8,13 @@
 #include <cstring>
 #include <cstdarg>
 
+#define SUCCEEDED(Status) ((Status) >= 0)
+
 #if defined(_WIN32)
 #define xerr std::cwerr
 #define xout std::cwout
-#define PATH_SEPARATOR L"\\"
-#define NEWLINE L"\r\n"
+#define DIR_SEPARATOR L"\\"
+#define PATH_SEPARATOR L";"
 
 namespace pal
 {
@@ -39,8 +41,14 @@ namespace pal
 
 #define xerr std::cerr
 #define xout std::cout
-#define PATH_SEPARATOR "/"
-#define NEWLINE "\n"
+#define DIR_SEPARATOR "/"
+#define PATH_SEPARATOR ":"
+
+#if defined(__APPLE__)
+#define LIBCORECLR_NAME "libcoreclr.dylib"
+#else
+#define LIBCORECLR_NAME "libcoreclr.so"
+#endif
 
 namespace pal
 {
@@ -62,13 +70,14 @@ namespace pal
     std::vector<pal::string_t> readdir(const string_t& path);
 
     std::pair<bool, int> execute_assembly(
-        const char_t* exe_path,
-        const char_t** property_keys,
-        const char_t** property_values,
-        size_t property_count,
-        const string_t& managed_application,
-        int app_argc,
-        const string_t& app_argv);
+            const string_t& clr_path,
+            const char_t* exe_path,
+            const char_t** property_keys,
+            const char_t** property_values,
+            size_t property_count,
+            const string_t& managed_application,
+            int app_argc,
+            const char_t** app_argv);
 }
 
 #define _X(s) s
