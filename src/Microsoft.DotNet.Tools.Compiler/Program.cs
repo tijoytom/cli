@@ -159,7 +159,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             // Get compilation options
             var compilationOptions = context.ProjectFile.GetCompilerOptions(context.TargetFramework, configuration);
             var outputName = Path.Combine(outputPath, context.ProjectFile.Name + (compilationOptions.EmitEntryPoint.GetValueOrDefault() ? ".exe" : ".dll"));
-            
+
             // Assemble args
             var compilerArgs = new List<string>()
             {
@@ -172,7 +172,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             compilerArgs.Add("-nowarn:CS1701");
             compilerArgs.Add("-nowarn:CS1702");
             compilerArgs.Add("-nowarn:CS1705");
-            
+
             // Add compilation options to the args
             ApplyCompilationOptions(compilationOptions, compilerArgs);
 
@@ -224,9 +224,44 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             var success = result.ExitCode == 0;
 
+            if (success && compilationOptions.EmitEntryPoint.GetValueOrDefault())
+            {
+                EmitHost(outputPath, outputName, exporter);
+            }
+
             PrintSummary(success, diagnostics);
 
             return success;
+        }
+
+        private static void EmitHost(string outputPath, string outputName, LibraryExporter exporter)
+        {
+            // Write the Host information file (basically a simplified form of the lock file)
+            List<string> lines = new List<string>();
+            foreach(var export in exporter.GetAllExports())
+            {
+                lines.AddRange(GenerateLines(export, export.RuntimeAssemblies, "runtime"));
+                lines.AddRange(GenerateLines(export, export.NativeLibraries, "native"));
+            }
+
+            File.WriteAllLines(Path.Combine(outputPath, outputName + ".tpa"), lines);
+
+            // Copy the host in
+            // CopyHost(Path.Combine(outputPath, outputName + ".exe"));
+        }
+
+        private static IEnumerable<string> GenerateLines(LibraryExport export, IEnumerable<string> items, string type)
+        {
+            return items.Select(item =>
+                EscapeCsv(type) + "," +
+                EscapeCsv(export.Library.Identity.Name) + "," +
+                EscapeCsv(export.Library.Identity.Version.ToNormalizedString()) + "," +
+                EscapeCsv(item));
+        }
+
+        private static string EscapeCsv(string input)
+        {
+            return "\"" + input.Replace("\\", "\\\\").input.Replace("\"", "\\\"") + "\"";
         }
 
         private static void PrintSummary(bool success, List<DiagnosticMessage> diagnostics)
@@ -342,7 +377,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             {
                 var severity = error.category == CanonicalError.Parts.Category.Error ?
                 DiagnosticMessageSeverity.Error : DiagnosticMessageSeverity.Warning;
-                
+
                 return new DiagnosticMessage(
                     error.code,
                     error.text,
@@ -358,7 +393,7 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             return null;
         }
-        
+
         private static void PrintDiagnostic(DiagnosticMessage diag)
         {
             switch (diag.Severity)
