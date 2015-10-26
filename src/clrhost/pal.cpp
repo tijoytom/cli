@@ -108,42 +108,7 @@ std::vector<pal::string_t> pal::readdir(const pal::string_t& path)
     return files;
 }
 
-// TODO(anurse): Move this elsewhere and use trace instead of xerr
-//
-//
-// Prototype of the coreclr_initialize function from the libcoreclr.so
-typedef int (*coreclr_initialize_fn)(
-            const char* exePath,
-            const char* appDomainFriendlyName,
-            int propertyCount,
-            const char** propertyKeys,
-            const char** propertyValues,
-            void** hostHandle,
-            unsigned int* domainId);
-
-// Prototype of the coreclr_shutdown function from the libcoreclr.so
-typedef int (*coreclr_shutdown_fn)(
-            void* hostHandle,
-            unsigned int domainId);
-
-// Prototype of the coreclr_execute_assembly function from the libcoreclr.so
-typedef int (*coreclr_execute_assembly_fn)(
-            void* hostHandle,
-            unsigned int domainId,
-            int argc,
-            const char** argv,
-            const char* managedAssemblyPath,
-            unsigned int* exitCode);
-
-std::pair<bool, int> pal::execute_assembly(
-        const pal::string_t& clr_path,
-        const pal::char_t* exe_path,
-        const pal::char_t** property_keys,
-        const pal::char_t** property_values,
-        size_t property_count,
-        const pal::string_t& managed_application,
-        int app_argc,
-        const pal::char_t** app_argv)
+pal::coreclr pal::load_coreclr(const pal::string_t& clr_path)
 {
     pal::string_t libcoreclr_path(clr_path);
     libcoreclr_path.append(DIR_SEPARATOR);
@@ -154,70 +119,64 @@ std::pair<bool, int> pal::execute_assembly(
     if (handle == nullptr)
     {
         xerr << "failed to load " LIBCORECLR_NAME " with error: " << dlerror() << std::endl;
-        return std::make_pair(false, 0);
+        return pal::coreclr(nullptr);
     }
+    return pal::coreclr(handle);
+}
 
-    // Bind functions
-    coreclr_initialize_fn coreclr_initialize = (coreclr_initialize_fn)dlsym(handle, "coreclr_initialize");
-    if (coreclr_initialize == nullptr)
+pal::coreclr::coreclr(void* dlhandle) : m_dlhandle(dlhandle)
+{
+    if (dlhandle != nullptr)
     {
-        xerr << "failed to bind coreclr_initialize" << std::endl;
-        return std::make_pair(false, 0);
+        coreclr_initialize = (decltype(coreclr_initialize))dlsym(dlhandle, "coreclr_initialize");
+        coreclr_shutdown = (decltype(coreclr_shutdown))dlsym(dlhandle, "coreclr_initialize");
+        coreclr_execute_assembly = (decltype(coreclr_execute_assembly))dlsym(dlhandle, "coreclr_execute_assembly");
     }
-    coreclr_shutdown_fn coreclr_shutdown = (coreclr_shutdown_fn)dlsym(handle, "coreclr_initialize");
-    if (coreclr_shutdown == nullptr)
-    {
-        xerr << "failed to bind coreclr_shutdown" << std::endl;
-        return std::make_pair(false, 0);
-    }
-    coreclr_execute_assembly_fn coreclr_execute_assembly = (coreclr_execute_assembly_fn)dlsym(handle, "coreclr_execute_assembly");
-    if (coreclr_execute_assembly == nullptr)
-    {
-        xerr << "failed to bind coreclr_execute_assembly" << std::endl;
-        return std::make_pair(false, 0);
-    }
+}
 
-    void* host_handle;
-    unsigned int domain_id;
+pal::coreclr::~coreclr()
+{
+    dlclose(m_dlhandle);
+}
 
-    auto st = coreclr_initialize(
+int pal::coreclr::initialize(
+        const pal::char_t* exe_path,
+        const pal::char_t* app_domain_friendly_name,
+        const pal::char_t** property_keys,
+        const pal::char_t** property_values,
+        int property_count,
+        void** host_handle,
+        unsigned int* domain_id)
+{
+    return coreclr_initialize(
             exe_path,
-            "clrhost",
+            app_domain_friendly_name,
             property_count,
             property_keys,
             property_values,
-            &host_handle,
-            &domain_id);
-    if (!SUCCEEDED(st))
-    {
-        xerr << "error initializing CoreCLR: 0x" << std::hex << st << std::endl;
-        return std::make_pair(false, 0);
-    }
+            host_handle,
+            domain_id);
+}
 
-    unsigned int exit_code;
-    st = coreclr_execute_assembly(
+int pal::coreclr::shutdown(void* host_handle, unsigned int domain_id)
+{
+    return coreclr_shutdown(host_handle, domain_id);
+}
+
+int pal::coreclr::execute_assembly(
+        void* host_handle,
+        unsigned int domain_id,
+        int argc,
+        const pal::char_t** argv,
+        const pal::char_t* managed_assembly_path,
+        unsigned int* exit_code)
+{
+    return coreclr_execute_assembly(
             host_handle,
             domain_id,
-            app_argc,
-            app_argv,
-            managed_application.c_str(),
-            &exit_code);
-    if (!SUCCEEDED(st))
-    {
-        xerr << "error executing application: 0x" << std::hex << st << std::endl;
-        return std::make_pair(false, 0);
-    }
-
-    st = coreclr_shutdown(host_handle, domain_id);
-    if (!SUCCEEDED(st))
-    {
-        xerr << "warning: error shutting down CoreCLR: 0x" << std::hex << st << std::endl;
-    }
-
-    if (!dlclose(handle))
-    {
-        xerr << "warning: failed to close libcoreclr" << std::endl;
-    }
-    return std::make_pair(true, exit_code);
+            argc,
+            argv,
+            managed_assembly_path,
+            exit_code);
 }
 #endif // _WIN32

@@ -55,7 +55,68 @@ namespace pal
     typedef char char_t;
     typedef std::string string_t;
     typedef std::ifstream ifstream_t;
-    typedef void* dll_t;
+
+    class coreclr
+    {
+    private:
+        void* m_dlhandle;
+        bool m_bound;
+
+        // Prototype of the coreclr_initialize function from the libcoreclr.so
+        int (*coreclr_initialize)(
+                    const char* exePath,
+                    const char* appDomainFriendlyName,
+                    int propertyCount,
+                    const char** propertyKeys,
+                    const char** propertyValues,
+                    void** hostHandle,
+                    unsigned int* domainId);
+
+        // Prototype of the coreclr_shutdown function from the libcoreclr.so
+        int (*coreclr_shutdown)(
+                    void* hostHandle,
+                    unsigned int domainId);
+
+        // Prototype of the coreclr_execute_assembly function from the libcoreclr.so
+        int (*coreclr_execute_assembly)(
+                    void* hostHandle,
+                    unsigned int domainId,
+                    int argc,
+                    const char** argv,
+                    const char* managedAssemblyPath,
+                    unsigned int* exitCode);
+
+    public:
+        coreclr(void* dlhandle);
+        ~coreclr();
+
+        inline bool bound()
+        {
+            return m_dlhandle != nullptr &&
+                coreclr_initialize != nullptr &&
+                coreclr_shutdown != nullptr &&
+                coreclr_execute_assembly != nullptr;
+        }
+
+        int initialize(
+                const char_t* exe_path,
+                const char_t* app_domain_friendly_name,
+                const char_t** property_keys,
+                const char_t** property_values,
+                int property_count,
+                void** host_handle,
+                unsigned int* domain_id);
+
+        int shutdown(void* host_handle, unsigned int domain_id);
+
+        int execute_assembly(
+                void* host_handle,
+                unsigned int domain_id,
+                int argc,
+                const char_t** argv,
+                const char_t* managed_assembly_path,
+                unsigned int* exit_code);
+    };
 
     inline int strcmp(const char_t* str1, const char_t* str2) { return ::strcmp(str1, str2); }
     inline int strcasecmp(const char_t* str1, const char_t* str2) { return ::strcasecmp(str1, str2); }
@@ -68,6 +129,8 @@ namespace pal
     ifstream_t open_read(const string_t& path);
     bool file_exists(const string_t& path);
     std::vector<pal::string_t> readdir(const string_t& path);
+
+    coreclr load_coreclr(const string_t& clr_path);
 
     std::pair<bool, int> execute_assembly(
             const string_t& clr_path,

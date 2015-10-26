@@ -34,23 +34,50 @@ int host::run(arguments_t args, pal::string_t app_base, tpafile tpa, trace_write
         "UseLatestBehaviorWhenTFMNotSpecified"
     };
 
-    auto result = pal::execute_assembly(
-            args.clr_path,
-            "something",
+    // Bind CoreCLR
+    auto coreclr = pal::load_coreclr(args.clr_path);
+    if (!coreclr.bound())
+    {
+        trace.write(_X("error: failed to bind to coreclr"));
+    }
+
+    // Initialize CoreCLR
+    void* host_handle;
+    unsigned int domain_id;
+    auto hr = coreclr.initialize(
+            args.managed_application.c_str(),
+            "clrhost",
             property_keys,
             property_values,
             sizeof(property_keys) / sizeof(property_keys[0]),
-            args.managed_application,
-            args.app_argc,
-            args.app_argv);
-
-    if (!result.first)
+            &host_handle,
+            &domain_id);
+    if (!SUCCEEDED(hr))
     {
-        xerr << "error running application" << std::endl;
+        trace.write(_X("error: failed to initialize CoreCLR, HRESULT: 0x%X"), hr);
         return 1;
     }
-    else
+
+    // Execute the application
+    unsigned int exit_code = 1;
+    hr = coreclr.execute_assembly(
+            host_handle,
+            domain_id,
+            args.app_argc,
+            args.app_argv,
+            args.managed_application.c_str(),
+            &exit_code);
+    if (!SUCCEEDED(hr))
     {
-        return result.second;
+        trace.write(_X("error: failed to execute managed app, HRESULT: 0x%X"), hr);
+        return 1;
     }
+
+    // Shut down the CoreCLR
+    hr = coreclr.shutdown(host_handle, domain_id);
+    if (!SUCCEEDED(hr))
+    {
+        trace.write(_X("error: failed to shut down CoreCLR, HRESULT: 0x%X"), hr);
+    }
+    return exit_code;
 }
