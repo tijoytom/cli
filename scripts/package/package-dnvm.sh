@@ -16,10 +16,7 @@ source "$DIR/../_common.sh"
 
 REPOROOT="$( cd -P "$DIR/../.." && pwd )"
 
-if [ -z "$DOTNET_BUILD_VERSION" ]; then
-    TIMESTAMP=$(date "+%Y%m%d%H%M%S")
-    DOTNET_BUILD_VERSION=0.0.1-alpha-t$TIMESTAMP
-fi
+[ ! -z "$DOTNETCLI_BUILD_VERSION" ] || die "Missing required environment variable DOTNETCLI_BUILD_VERSION"
 
 STAGE2_DIR=$REPOROOT/artifacts/$RID/stage2
 
@@ -31,7 +28,7 @@ fi
 PACKAGE_DIR=$REPOROOT/artifacts/packages/dnvm
 [ -d "$PACKAGE_DIR" ] || mkdir -p $PACKAGE_DIR
 
-PACKAGE_SHORT_NAME=dotnet-${OSNAME}-x64.${DOTNET_BUILD_VERSION}
+PACKAGE_SHORT_NAME=dotnet-${OSNAME}-x64.${DOTNETCLI_BUILD_VERSION}
 PACKAGE_NAME=$PACKAGE_DIR/${PACKAGE_SHORT_NAME}.tar.gz
 
 cd $STAGE2_DIR

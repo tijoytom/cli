@@ -2,6 +2,7 @@
 # Copyright (c) .NET Foundation and contributors. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
+param([string]$Configuration = "Debug")
 
 . "$PSScriptRoot\..\_common.ps1"
 
@@ -9,12 +10,10 @@ if(!(Test-Path $PackageDir)) {
     mkdir $PackageDir | Out-Null
 }
 
-if(![string]::IsNullOrEmpty($env:DOTNET_BUILD_VERSION)) {
-    $PackageVersion = $env:DOTNET_BUILD_VERSION
-} else {
-    $Timestamp = [DateTime]::Now.ToString("yyyyMMddHHmmss")
-    $PackageVersion = "0.0.1-alpha-t$Timestamp"
+if([string]::IsNullOrEmpty($env:DOTNETCLI_BUILD_VERSION)) {
+    throw "Missing required environment variable DOTNETCLI_BUILD_VERSION"
 }
+$PackageVersion = $env:DOTNETCLI_BUILD_VERSION
 
 # Stamp the output with the commit metadata and version number
 $Commit = git rev-parse HEAD
@@ -37,6 +36,9 @@ Add-Type -Assembly System.IO.Compression.FileSystem
 [System.IO.Compression.ZipFile]::CreateFromDirectory($Stage2Dir, $PackageName, "Optimal", $false)
 
 Write-Host "Packaged stage2 to $PackageName"
+
+# Package the nupkgs
+& "$PSScriptRoot\package-nupkg.ps1" -Configuration:$Configuration -OutputDir "$RepoRoot\artifacts\packages\nupkg" -RepoRoot:$RepoRoot
 
 $PublishScript = Join-Path $PSScriptRoot "..\publish\publish.ps1"
 & $PublishScript -file $PackageName

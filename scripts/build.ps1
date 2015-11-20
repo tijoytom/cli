@@ -18,7 +18,7 @@ if (!(Test-Path $env:DOTNET_INSTALL_DIR))
 }
 $env:PATH = "$env:DOTNET_INSTALL_DIR\cli\bin;$env:PATH"
 
-if (!$env:DOTNET_BUILD_VERSION) {
+if (!$env:DOTNETCLI_BUILD_VERSION) {
     # Get the timestamp of the most recent commit
     $timestamp = git log -1 --format=%ct
     $commitTime = [timespan]::FromSeconds($timestamp)
@@ -28,14 +28,14 @@ if (!$env:DOTNET_BUILD_VERSION) {
     $buildnumber = $commitTime.Days
     $revnumber = $commitTime.TotalSeconds
 
-    $env:DOTNET_BUILD_VERSION = "$majorVersion.$minorVersion.$buildnumber.$revnumber"
+    $env:DOTNETCLI_BUILD_VERSION = "$majorVersion.$minorVersion.$buildnumber.$revnumber"
 }
 
-Write-Host -ForegroundColor Green "*** Building dotnet tools version $($env:DOTNET_BUILD_VERSION) - $Configuration ***"
+Write-Host -ForegroundColor Green "*** Building dotnet tools version $($env:DOTNETCLI_BUILD_VERSION) - $Configuration ***"
 & "$PSScriptRoot\compile.ps1" -Configuration:$Configuration
 
 Write-Host -ForegroundColor Green "*** Packaging dotnet ***"
-& "$PSScriptRoot\package\package.ps1"
+& "$PSScriptRoot\package\package.ps1" -Configuration:$Configuration
 
 Write-Host -ForegroundColor Green "*** Generating dotnet MSI ***"
 & "$RepoRoot\packaging\windows\generatemsi.ps1" $Stage2Dir

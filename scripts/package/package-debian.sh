@@ -63,7 +63,7 @@ create_debian_package(){
 
     mkdir -p $PACKAGE_OUTPUT_DIR
 
-    $PACKAGING_ROOT/package_tool/package_tool $PACKAGE_LAYOUT_DIR $PACKAGE_OUTPUT_DIR $DOTNET_BUILD_VERSION
+    $PACKAGING_ROOT/package_tool/package_tool $PACKAGE_LAYOUT_DIR $PACKAGE_OUTPUT_DIR $DOTNETCLI_BUILD_VERSION
 }
 
 test_debian_package(){

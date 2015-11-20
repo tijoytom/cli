@@ -37,6 +37,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             var output = app.Option("-o|--output <OUTPUT_DIR>", "Directory in which to place outputs", CommandOptionType.SingleValue);
             var intermediateOutput = app.Option("-t|--temp-output <OUTPUT_DIR>", "Directory in which to place temporary outputs", CommandOptionType.SingleValue);
             var configuration = app.Option("-c|--configuration <CONFIGURATION>", "Configuration under which to build", CommandOptionType.SingleValue);
+            var version = app.Option("-v|--version <VERSION>", "Override the version specified in the project with the provided value.", CommandOptionType.SingleValue);
             var project = app.Argument("<PROJECT>", "The project to compile, defaults to the current directory. Can be a path to a project.json or a project directory");
 
             app.OnExecute(() =>
@@ -51,7 +52,7 @@ namespace Microsoft.DotNet.Tools.Compiler
                 var configValue = configuration.Value() ?? Cli.Utils.Constants.DefaultConfiguration;
                 var outputValue = output.Value();
 
-                return BuildPackage(path, configValue, outputValue, intermediateOutput.Value()) ? 1 : 0;
+                return BuildPackage(path, configValue, outputValue, intermediateOutput.Value(), version.Value()) ? 1 : 0;
             });
 
             try
@@ -69,7 +70,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             }
         }
 
-        private static bool BuildPackage(string path, string configuration, string outputValue, string intermediateOutputValue)
+        private static bool BuildPackage(string path, string configuration, string outputValue, string intermediateOutputValue, string overrideVersion)
         {
             var contexts = ProjectContext.CreateContextForEachFramework(path);
             var project = contexts.First().ProjectFile;
@@ -108,6 +109,10 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             // Things compiled now build the package
             var packageBuilder = CreatePackageBuilder(project);
+            if(!string.IsNullOrEmpty(overrideVersion))
+            {
+                packageBuilder.Version = NuGetVersion.Parse(overrideVersion);
+            }
 
             // TODO: Report errors for required fields
             // id
@@ -133,7 +138,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             }
 
             var rootOutputPath = GetOutputPath(project, configuration, outputValue);
-            var packageOutputPath = GetPackagePath(project, rootOutputPath);
+            var packageOutputPath = GetPackagePath(packageBuilder, rootOutputPath);
 
             if (GeneratePackage(project, packageBuilder, packageOutputPath, packDiagnostics))
             {
@@ -356,9 +361,9 @@ namespace Microsoft.DotNet.Tools.Compiler
             packageBuilder.DependencySets.Add(new PackageDependencySet(context.TargetFramework, dependencies));
         }
 
-        private static string GetPackagePath(Project project, string outputPath, bool symbols = false)
+        private static string GetPackagePath(PackageBuilder packageBuilder, string outputPath, bool symbols = false)
         {
-            string fileName = $"{project.Name}.{project.Version}{(symbols ? ".symbols" : string.Empty)}{NuGet.Constants.PackageExtension}";
+            string fileName = $"{packageBuilder.Id}.{packageBuilder.Version.ToNormalizedString()}{(symbols ? ".symbols" : string.Empty)}{NuGet.Constants.PackageExtension}";
             return Path.Combine(outputPath, fileName);
         }
 

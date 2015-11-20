@@ -4,6 +4,8 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
+set -e
+
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
   DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
@@ -15,25 +17,17 @@ REPOROOT="$( cd -P "$DIR/../.." && pwd )"
 
 source "$DIR/../_common.sh"
 
-echo "Starting packaging"
+[ ! -z "$CONFIGURATION" ] || die "Missing required environment variable CONFIGURATION"
+[ ! -z "$OUTPUT_DIR" ] || die "Missing required environment variable OUTPUT_DIR"
 
-[ ! -z "$DOTNETCLI_BUILD_VERSION" ] || die "Missing required environment variable DOTNETCLI_BUILD_VERSION"
+PROJECTS=( \
+    Microsoft.DotNet.ProjectModel \
+    Microsoft.DotNet.ProjectModel.Workspaces \
+)
 
-COMMIT=$(git rev-parse HEAD)
-echo $COMMIT > $STAGE2_DIR/.version
-echo $DOTNETCLI_BUILD_VERSION >> $STAGE2_DIR/.version
-
-# Create NuGet Packages
-OUTPUT_DIR=$REPOROOT/artifacts/packages/nupkg $DIR/package-nupkg.sh
-
-# Create Dnvm Package
-$DIR/package-dnvm.sh
-
-if [[ "$UNAME" == "Linux" ]]; then
-    # Create Debian package
-    $DIR/package-debian.sh
-elif [[ "$UNAME" == "Darwin" ]]; then
-    # Create OSX PKG
-    $DIR/../../packaging/osx/package-osx.sh
-fi
-
+# Put stage2 on the path
+export PATH=$STAGE2_DIR/bin:$PATH
+for project in ${PROJECTS[@]}
+do
+    dotnet pack --output "$OUTPUT_DIR" --configuration "$CONFIGURATION" "$REPOROOT/src/$project" --version "$DOTNETCLI_BUILD_VERSION"
+done

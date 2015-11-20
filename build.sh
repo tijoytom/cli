@@ -46,9 +46,9 @@ minor=0
 build=$(($LAST_COMMIT_TIMESTAMP/3600/24))
 revision=$LAST_COMMIT_TIMESTAMP
 
-export DOTNET_BUILD_VERSION=$major.$minor.$build.$revision
+export DOTNETCLI_BUILD_VERSION=$major.$minor.$build.$revision
 
-header "Building dotnet tools version $DOTNET_BUILD_VERSION - $CONFIGURATION"
+header "Building dotnet tools version $DOTNETCLI_BUILD_VERSION - $CONFIGURATION"
 
 if [ ! -z "$BUILD_IN_DOCKER" ]; then
     export BUILD_COMMAND="/opt/code/scripts/compile.sh"

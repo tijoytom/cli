@@ -355,10 +355,6 @@ namespace Microsoft.DotNet.Tools.Compiler
                     }
                 }).Execute();
 
-            // Run post-compile event
-            contextVariables["compile:CompilerExitCode"] = result.ExitCode.ToString();
-            RunScripts(context, ScriptNames.PostCompile, contextVariables);
-
             var success = result.ExitCode == 0;
 
             if (success && compilationOptions.EmitEntryPoint.GetValueOrDefault())
@@ -369,7 +365,16 @@ namespace Microsoft.DotNet.Tools.Compiler
                              runtimeContext.CreateExporter(configuration));
             }
 
-            return PrintSummary(diagnostics, sw, success);
+            success = PrintSummary(diagnostics, sw, success);
+
+            if (success)
+            {
+                // Run post-compile event
+                contextVariables["compile:CompilerExitCode"] = result.ExitCode.ToString();
+                RunScripts(context, ScriptNames.PostCompile, contextVariables);
+            }
+
+            return success;
         }
 
         private static void RunScripts(ProjectContext context, string name, Dictionary<string, string> contextVariables)
