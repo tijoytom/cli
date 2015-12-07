@@ -17,6 +17,8 @@ using NuGet.Frameworks;
 using Microsoft.DotNet.ProjectModel.Utilities;
 using Microsoft.DotNet.ProjectModel.Graph;
 using Newtonsoft.Json.Linq;
+using System.IO.Compression;
+using Newtonsoft.Json;
 
 namespace Microsoft.DotNet.Tools.Compiler
 {
@@ -101,29 +103,29 @@ namespace Microsoft.DotNet.Tools.Compiler
         }
 
         private static bool CompileNative(
-            ProjectContext context, 
-            string configuration, 
-            string outputOptionValue, 
-            bool buildProjectReferences, 
-            string intermediateOutputValue, 
-            string archValue, 
-            string ilcArgsValue, 
+            ProjectContext context,
+            string configuration,
+            string outputOptionValue,
+            bool buildProjectReferences,
+            string intermediateOutputValue,
+            string archValue,
+            string ilcArgsValue,
             string ilcPathValue,
             string ilcSdkPathValue,
             bool isCppMode)
         {
             var outputPath = GetOutputPath(context, configuration, outputOptionValue);
             var nativeOutputPath = Path.Combine(GetOutputPath(context, configuration, outputOptionValue), "native");
-            var intermediateOutputPath = 
+            var intermediateOutputPath =
                 GetIntermediateOutputPath(context, configuration, intermediateOutputValue, outputOptionValue);
 
             Directory.CreateDirectory(nativeOutputPath);
             Directory.CreateDirectory(intermediateOutputPath);
 
             var compilationOptions = context.ProjectFile.GetCompilerOptions(context.TargetFramework, configuration);
-            var managedOutput = 
+            var managedOutput =
                 GetProjectOutput(context.ProjectFile, context.TargetFramework, configuration, outputPath);
-            
+
             var nativeArgs = new List<string>();
 
             // Input Assembly
@@ -134,8 +136,8 @@ namespace Microsoft.DotNet.Tools.Compiler
             {
                 nativeArgs.Add("--ilcargs");
                 nativeArgs.Add($"{ilcArgsValue}");
-            }            
-            
+            }
+
             // ILC Path
             if (!string.IsNullOrWhiteSpace(ilcPathValue))
             {
@@ -151,7 +153,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             }
 
             // CodeGen Mode
-            if(isCppMode)
+            if (isCppMode)
             {
                 nativeArgs.Add("--mode");
                 nativeArgs.Add("cpp");
@@ -177,7 +179,7 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             // Output Path
             nativeArgs.Add("--output");
-            nativeArgs.Add($"{nativeOutputPath}");            
+            nativeArgs.Add($"{nativeOutputPath}");
 
             // Write Response File
             var rsp = Path.Combine(intermediateOutputPath, $"dotnet-compile-native.{context.ProjectFile.Name}.rsp");
@@ -228,7 +230,7 @@ namespace Microsoft.DotNet.Tools.Compiler
                 foreach (var projectDependency in Sort(projects))
                 {
                     // Skip compiling project dependencies since we've already figured out the build order
-                    var compileResult = Command.Create("dotnet-compile", 
+                    var compileResult = Command.Create("dotnet-compile",
                         $"--framework {projectDependency.Framework} " +
                         $"--configuration {configuration} " +
                         $"--output \"{outputPath}\" " +
@@ -561,7 +563,7 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             // Strip out unnecessary data from libraries
             var libraries = ((JObject)lockFile.Property("libraries").Value).Properties().Select(p => p.Value).Cast<JObject>();
-            foreach(var lib in libraries)
+            foreach (var lib in libraries)
             {
                 // Remove the files section
                 lib.Remove("files");
@@ -569,7 +571,7 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             // Strip out unnecessary targets and unnecessary data from remaining targets
             var unnecessaryTargets = new List<JToken>();
-            foreach(var target in ((JObject)lockFile.Property("targets").Value).Properties())
+            foreach (var target in ((JObject)lockFile.Property("targets").Value).Properties())
             {
                 if (string.Equals(compilationTarget, target.Name, StringComparison.OrdinalIgnoreCase))
                 {
@@ -589,18 +591,27 @@ namespace Microsoft.DotNet.Tools.Compiler
                 }
             }
 
-            foreach(var target in unnecessaryTargets)
+            foreach (var target in unnecessaryTargets)
             {
                 target.Remove();
             }
 
+            // Add a little top-level metadata
+            lockFile.Add("target", runtimeTarget);
+
             // Write the file to the output
-            File.WriteAllText(Path.Combine(outputPath, $"{runtimeContext.ProjectFile.Name}.deps.json"), lockFile.ToString());
+            var depsFile = Path.Combine(outputPath, $"{runtimeContext.ProjectFile.Name}.{runtimeContext.TargetFramework.GetTwoDigitShortFolderName()}.{runtimeContext.RuntimeIdentifier}.deps.json");
+            using (var fs = new FileStream(depsFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
+            //using(var gz = new GZipStream(fs, CompressionLevel.Optimal))
+            using (var writer = new StreamWriter(fs))
+            {
+                writer.Write(lockFile.ToString(Formatting.None));
+            }
         }
 
         private static void CleanItemProperties(JObject value, string property)
         {
-            foreach(var prop in value.Properties().Select(p => p.Value).Cast<JObject>())
+            foreach (var prop in value.Properties().Select(p => p.Value).Cast<JObject>())
             {
                 prop.Remove(property);
             }
