@@ -15,6 +15,8 @@ using Microsoft.DotNet.ProjectModel;
 using Microsoft.DotNet.ProjectModel.Compilation;
 using NuGet.Frameworks;
 using Microsoft.DotNet.ProjectModel.Utilities;
+using Microsoft.DotNet.ProjectModel.Graph;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.DotNet.Tools.Compiler
 {
@@ -535,8 +537,73 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             File.WriteAllLines(Path.Combine(outputPath, runtimeContext.ProjectFile.Name + ".deps"), lines);
 
+            // SPIKE(anurse): DO NOT MERGE - Strip the lock file to produce a deps.json file
+            ProduceDepsJson(runtimeContext, outputPath);
+
             // Copy the host in
             CopyHost(Path.Combine(outputPath, runtimeContext.ProjectFile.Name + Constants.ExeSuffix));
+        }
+
+        private static void ProduceDepsJson(ProjectContext runtimeContext, string outputPath)
+        {
+            // Grab the lock file in a terrible, no good, very bad way.
+            var lockFilePath = Path.Combine(runtimeContext.ProjectDirectory, LockFile.FileName);
+            var lockFile = JObject.Parse(File.ReadAllText(lockFilePath));
+
+            // Trim down the targets to just the active runtime-specific and runtime-agnostic target
+            var compilationTarget = runtimeContext.TargetFramework.ToString();
+            var runtimeTarget = $"{runtimeContext.TargetFramework.ToString()}/{runtimeContext.RuntimeIdentifier}";
+
+            // Strip out unnecessary properties
+            lockFile.Remove("locked");
+            lockFile.Remove("version");
+            lockFile.Remove("projectFileDependencyGroups");
+
+            // Strip out unnecessary data from libraries
+            var libraries = ((JObject)lockFile.Property("libraries").Value).Properties().Select(p => p.Value).Cast<JObject>();
+            foreach(var lib in libraries)
+            {
+                // Remove the files section
+                lib.Remove("files");
+            }
+
+            // Strip out unnecessary targets and unnecessary data from remaining targets
+            var unnecessaryTargets = new List<JToken>();
+            foreach(var target in ((JObject)lockFile.Property("targets").Value).Properties())
+            {
+                if (string.Equals(compilationTarget, target.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Clean runtime properties, they aren't needed in this target
+                    CleanItemProperties((JObject)target.Value, "runtime");
+                }
+                else if (string.Equals(runtimeTarget, target.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Clean compile properties, they aren't needed in this target
+                    CleanItemProperties((JObject)target.Value, "compile");
+                }
+                else
+                {
+                    // Don't need it
+                    //  Ye olde workaround for "Collection modified, enumeration cannot continue"
+                    unnecessaryTargets.Add(target);
+                }
+            }
+
+            foreach(var target in unnecessaryTargets)
+            {
+                target.Remove();
+            }
+
+            // Write the file to the output
+            File.WriteAllText(Path.Combine(outputPath, $"{runtimeContext.ProjectFile.Name}.deps.json"), lockFile.ToString());
+        }
+
+        private static void CleanItemProperties(JObject value, string property)
+        {
+            foreach(var prop in value.Properties().Select(p => p.Value).Cast<JObject>())
+            {
+                prop.Remove(property);
+            }
         }
 
         private static void CopyHost(string target)
