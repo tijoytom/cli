@@ -12,10 +12,11 @@ namespace Microsoft.Extensions.DependencyModel
     {
         private const string DepsResourceSufix = ".deps.json";
 
-        public DependencyContext(string target, string runtime, Library[] compileLibraries, Library[] runtimeLibraries)
+        public DependencyContext(string target, string runtime, CompilationOptions compilationOptions, Library[] compileLibraries, Library[] runtimeLibraries)
         {
             Target = target;
             Runtime = runtime;
+            CompilationOptions = compilationOptions;
             CompileLibraries = compileLibraries;
             RuntimeLibraries = runtimeLibraries;
         }
@@ -23,6 +24,8 @@ namespace Microsoft.Extensions.DependencyModel
         public string Target { get; set; }
 
         public string Runtime { get; set; }
+
+        public CompilationOptions CompilationOptions { get; }
 
         public IReadOnlyList<Library> CompileLibraries { get; }
 
