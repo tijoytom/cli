@@ -386,7 +386,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             // Add project source files
             var sourceFiles = context.ProjectFile.Files.SourceFiles;
             compilerArgs.AddRange(sourceFiles);
-            
+
             // Write RSP file
             var rsp = Path.Combine(intermediateOutputPath, $"dotnet-compile.{context.ProjectFile.Name}.rsp");
             File.WriteAllLines(rsp, compilerArgs);
@@ -452,12 +452,12 @@ namespace Microsoft.DotNet.Tools.Compiler
         private static bool TryAddAnalyzers(CommonCompilerOptions compilationOptions, LibraryExport dependency, List<string> analyzers, string compilerName,
             IEnumerable<string> assemblies)
         {
-            if (compilationOptions.Analysers == null)
+            if (compilationOptions.Analyzers == null)
             {
                 return true;
             }
 
-            var analyzerOptions = compilationOptions.Analysers.
+            var analyzerOptions = compilationOptions.Analyzers.
                 FirstOrDefault(a => string.Equals(a.Name, dependency.Library.Identity.Name, StringComparison.OrdinalIgnoreCase));
 
             if (analyzerOptions != null)

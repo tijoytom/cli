@@ -32,6 +32,8 @@ namespace Microsoft.DotNet.Cli.Compiler.Common
 
         internal static readonly OptionTemplate s_emitEntryPointTemplate = new OptionTemplate("emit-entry-point");
 
+        internal static readonly OptionTemplate s_rulesetTemplate = new OptionTemplate("ruleset");
+
         public static CommonCompilerOptions Parse(ArgumentSyntax syntax)
         {
             IReadOnlyList<string> defines = null;
@@ -44,6 +46,7 @@ namespace Microsoft.DotNet.Cli.Compiler.Common
             bool? delaySign = null;
             bool? publicSign = null;
             bool? emitEntryPoint = null;
+            string ruleset = null;
 
             Func<string, bool?> nullableBoolConverter = v => bool.Parse(v);
 
@@ -76,6 +79,8 @@ namespace Microsoft.DotNet.Cli.Compiler.Common
             syntax.DefineOption(s_emitEntryPointTemplate.LongName, ref emitEntryPoint,
                     nullableBoolConverter, "Output an executable console program");
 
+            syntax.DefineOption(s_rulesetTemplate.LongName, ref ruleset , "Path to ruleset file");
+
             return new CommonCompilerOptions
             {
                 Defines = defines,
@@ -103,6 +108,7 @@ namespace Microsoft.DotNet.Cli.Compiler.Common
             var delaySign = options.DelaySign;
             var publicSign = options.PublicSign;
             var emitEntryPoint = options.EmitEntryPoint;
+            var ruleset = options.Ruleset;
 
             var args = new List<string>();
 
@@ -154,6 +160,11 @@ namespace Microsoft.DotNet.Cli.Compiler.Common
             if (emitEntryPoint != null)
             {
                 args.Add(s_emitEntryPointTemplate.ToLongArg(emitEntryPoint));
+            }
+
+            if (ruleset != null)
+            {
+                args.Add(s_rulesetTemplate.ToLongArg(ruleset));
             }
 
             return args;

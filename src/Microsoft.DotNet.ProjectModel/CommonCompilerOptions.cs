@@ -31,7 +31,9 @@ namespace Microsoft.DotNet.ProjectModel
 
         public bool? PreserveCompilationContext { get; set; }
 
-        public IEnumerable<AnalyzerOptions> Analysers { get; set; }
+        public IEnumerable<AnalyzerOptions> Analyzers { get; set; }
+
+        public string Ruleset { get; set; }
 
         public static CommonCompilerOptions Combine(params CommonCompilerOptions[] options)
         {
@@ -101,10 +103,15 @@ namespace Microsoft.DotNet.ProjectModel
                     result.PreserveCompilationContext = option.PreserveCompilationContext;
                 }
 
-                if (option.Analysers != null)
+                if (option.Analyzers != null)
                 {
-                    var existing = result.Analysers ?? Enumerable.Empty<AnalyzerOptions>();
-                    result.Analysers = existing.Concat(option.Analysers).ToArray();
+                    var existing = result.Analyzers ?? Enumerable.Empty<AnalyzerOptions>();
+                    result.Analyzers = existing.Concat(option.Analyzers).ToArray();
+                }
+
+                if (option.Ruleset != null)
+                {
+                    result.Ruleset = option.Ruleset;
                 }
             }
 

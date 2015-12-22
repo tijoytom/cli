@@ -527,7 +527,7 @@ namespace Microsoft.DotNet.ProjectModel
                 PublicSign = rawOptions.ValueAsNullableBoolean("publicSign"),
                 EmitEntryPoint = rawOptions.ValueAsNullableBoolean("emitEntryPoint"),
                 PreserveCompilationContext = rawOptions.ValueAsNullableBoolean("preserveCompilationContext"),
-                Analysers = GetAnalyzerOptions(rawOptions.ValueAsJsonObject("analyzers"))
+                Analyzers = GetAnalyzerOptions(rawOptions.ValueAsJsonObject("analyzers"))
             };
         }
 

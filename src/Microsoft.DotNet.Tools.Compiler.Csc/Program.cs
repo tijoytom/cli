@@ -33,7 +33,6 @@ namespace Microsoft.DotNet.Tools.Compiler.Csc
             IReadOnlyList<string> resources = Array.Empty<string>();
             IReadOnlyList<string> sources = Array.Empty<string>();
             string outputName = null;
-            string ruleSet = null;
             var help = false;
             var returnCode = 0;
             string helpText = null;
@@ -52,8 +51,6 @@ namespace Microsoft.DotNet.Tools.Compiler.Csc
                     syntax.DefineOption("temp-output", ref tempOutDir, "Compilation temporary directory");
 
                     syntax.DefineOption("out", ref outputName, "Name of the output assembly");
-
-                    syntax.DefineOption("ruleset", ref ruleSet, "Path to ruleset file");
 
                     syntax.DefineOptionList("reference", ref references, "Path to a compiler metadata reference");
 
@@ -100,11 +97,6 @@ namespace Microsoft.DotNet.Tools.Compiler.Csc
             if (outputName != null)
             {
                 allArgs.Add($"-out:\"{outputName}\"");
-            }
-
-            if (ruleSet != null)
-            {
-                allArgs.Add($"-ruleset:\"{ruleSet}\"");
             }
 
             allArgs.AddRange(references.Select(r => $"-r:\"{r}\""));
@@ -206,6 +198,11 @@ namespace Microsoft.DotNet.Tools.Compiler.Csc
             if (options.EmitEntryPoint != true)
             {
                 commonArgs.Add("-t:library");
+            }
+
+            if (options.Ruleset != null)
+            {
+                commonArgs.Add($"-ruleset:\"{options.Ruleset}\"");
             }
 
             return commonArgs;
