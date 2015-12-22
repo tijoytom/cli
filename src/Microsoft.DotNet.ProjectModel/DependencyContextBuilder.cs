@@ -42,7 +42,7 @@ namespace Microsoft.Extensions.DependencyModel
 
         private static Library GetLibrary(LibraryExport export, NuGetFramework target, string configuration, IEnumerable<LibraryAsset> libraryAssets, IEnumerable<LibraryExport> dependencies)
         {
-            var type = export.Library.Identity.Type.ToString().ToLowerInvariant();
+            var type = export.Library.Identity.Type.Value.ToLowerInvariant();
 
             var serviceable = (export.Library as PackageDescription)?.Library.IsServiceable ?? false;
             var version = dependencies.Where(dependency => dependency.Library.Identity == export.Library.Identity);

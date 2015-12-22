@@ -34,43 +34,43 @@ namespace Microsoft.Extensions.DependencyModel
             var o = new JObject();
             if (compilationOptions.Defines != null)
             {
-                o.Add(new JProperty(DependencyContextStrings.DefinesPropertyName, compilationOptions.Defines));
+                o[DependencyContextStrings.DefinesPropertyName] = new JArray(compilationOptions.Defines);
             }
             if (compilationOptions.LanguageVersion != null)
             {
-                o.Add(new JProperty(DependencyContextStrings.LanguageVersionPropertyName, compilationOptions.LanguageVersion));
+                o[DependencyContextStrings.LanguageVersionPropertyName] = compilationOptions.LanguageVersion;
             }
             if (compilationOptions.Platform != null)
             {
-                o.Add(new JProperty(DependencyContextStrings.PlatformPropertyName, compilationOptions.Platform));
+                o[DependencyContextStrings.PlatformPropertyName] = compilationOptions.Platform;
             }
             if (compilationOptions.AllowUnsafe != null)
             {
-                o.Add(new JProperty(DependencyContextStrings.AllowUnsafePropertyName, compilationOptions.AllowUnsafe));
+                o[DependencyContextStrings.AllowUnsafePropertyName] = compilationOptions.AllowUnsafe;
             }
             if (compilationOptions.WarningsAsErrors != null)
             {
-                o.Add(new JProperty(DependencyContextStrings.WarningsAsErrorsPropertyName, compilationOptions.WarningsAsErrors));
+                o[DependencyContextStrings.WarningsAsErrorsPropertyName] = compilationOptions.WarningsAsErrors;
             }
             if (compilationOptions.Optimize != null)
             {
-                o.Add(new JProperty(DependencyContextStrings.OptimizePropertyName, compilationOptions.Optimize));
+                o[DependencyContextStrings.OptimizePropertyName] = compilationOptions.Optimize;
             }
             if (compilationOptions.KeyFile != null)
             {
-                o.Add(new JProperty(DependencyContextStrings.KeyFilePropertyName, compilationOptions.KeyFile));
+                o[DependencyContextStrings.KeyFilePropertyName] = compilationOptions.KeyFile;
             }
             if (compilationOptions.DelaySign != null)
             {
-                o.Add(new JProperty(DependencyContextStrings.DelaySignPropertyName, compilationOptions.DelaySign));
+                o[DependencyContextStrings.DelaySignPropertyName] = compilationOptions.DelaySign;
             }
             if (compilationOptions.PublicSign != null)
             {
-                o.Add(new JProperty(DependencyContextStrings.PublicSignPropertyName, compilationOptions.PublicSign));
+                o[DependencyContextStrings.PublicSignPropertyName] = compilationOptions.PublicSign;
             }
             if (compilationOptions.EmitEntryPoint != null)
             {
-                o.Add(new JProperty(DependencyContextStrings.EmitEntryPointPropertyName, compilationOptions.EmitEntryPoint));
+                o[DependencyContextStrings.EmitEntryPointPropertyName] = compilationOptions.EmitEntryPoint;
             }
             return o;
         }

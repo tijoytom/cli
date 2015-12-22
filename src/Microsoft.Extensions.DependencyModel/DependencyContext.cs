@@ -21,9 +21,9 @@ namespace Microsoft.Extensions.DependencyModel
             RuntimeLibraries = runtimeLibraries;
         }
 
-        public string Target { get; set; }
+        public string Target { get; }
 
-        public string Runtime { get; set; }
+        public string Runtime { get; }
 
         public CompilationOptions CompilationOptions { get; }
 
