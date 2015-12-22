@@ -290,6 +290,9 @@ namespace Microsoft.DotNet.Tools.Compiler
                 $"--out:{outputName}"
             };
 
+            var compilerName = context.ProjectFile.CompilerName;
+            compilerName = compilerName ?? "csc";
+
             var compilationOptions = context.ProjectFile.GetCompilerOptions(context.TargetFramework, configuration);
 
             // Path to strong naming key in environment variable overrides path in project.json
@@ -306,6 +309,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             }
 
             var references = new List<string>();
+            var analyzers = new List<string>();
 
             // Add compilation options to the args
             compilerArgs.AddRange(compilationOptions.SerializeToArgs());
@@ -315,29 +319,36 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             foreach (var dependency in dependencies)
             {
-                var projectDependency = dependency.Library as ProjectDescription;
+                IEnumerable<string> assemblies = Enumerable.Empty<string>();
 
+                var projectDependency = dependency.Library as ProjectDescription;
                 if (projectDependency != null)
                 {
                     if (projectDependency.Project.Files.SourceFiles.Any())
                     {
                         var projectOutputPath = GetProjectOutput(projectDependency.Project, projectDependency.Framework, configuration, outputPath);
-                        references.Add(projectOutputPath);
+                        assemblies = new[] { projectOutputPath };
                     }
                 }
                 else
                 {
-                    references.AddRange(dependency.CompilationAssemblies.Select(r => r.ResolvedPath));
+                    assemblies = dependency.CompilationAssemblies.Select(r => r.ResolvedPath);
                 }
 
+                if (!TryAddAnalyzers(compilationOptions, dependency, analyzers, compilerName, assemblies))
+                {
+                    return false;
+                }
+
+                references.AddRange(assemblies);
                 compilerArgs.AddRange(dependency.SourceReferences);
             }
 
             compilerArgs.AddRange(references.Select(r => $"--reference:{r}"));
+            compilerArgs.AddRange(analyzers.Select(a => $"--analyzer:{a}"));
 
             var runtimeContext = ProjectContext.Create(context.ProjectDirectory, context.TargetFramework, new[] { RuntimeIdentifier.Current });
             var libraryExporter = runtimeContext.CreateExporter(configuration);
-
             if (compilationOptions.PreserveCompilationContext == true)
             {
                 var dependencyContext = DependencyContextBuilder.Build(compilationOptions,
@@ -375,10 +386,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             // Add project source files
             var sourceFiles = context.ProjectFile.Files.SourceFiles;
             compilerArgs.AddRange(sourceFiles);
-
-            var compilerName = context.ProjectFile.CompilerName;
-            compilerName = compilerName ?? "csc";
-
+            
             // Write RSP file
             var rsp = Path.Combine(intermediateOutputPath, $"dotnet-compile.{context.ProjectFile.Name}.rsp");
             File.WriteAllLines(rsp, compilerArgs);
@@ -439,6 +447,54 @@ namespace Microsoft.DotNet.Tools.Compiler
             }
 
             return PrintSummary(diagnostics, sw, success);
+        }
+
+        private static bool TryAddAnalyzers(CommonCompilerOptions compilationOptions, LibraryExport dependency, List<string> analyzers, string compilerName,
+            IEnumerable<string> assemblies)
+        {
+            if (compilationOptions.Analysers == null)
+            {
+                return true;
+            }
+
+            var analyzerOptions = compilationOptions.Analysers.
+                FirstOrDefault(a => string.Equals(a.Name, dependency.Library.Identity.Name, StringComparison.OrdinalIgnoreCase));
+
+            if (analyzerOptions != null)
+            {
+                // If assemblies are defined for analyzer we just join library path and assemly path
+                if (analyzerOptions.Assemblies.Any())
+                {
+                    foreach (var analyzerAssembly in analyzerOptions.Assemblies)
+                    {
+                        var assemblyPath = Path.Combine(dependency.Library.Path, analyzerAssembly);
+                        if (!File.Exists(assemblyPath))
+                        {
+                            Reporter.Error.WriteLine($"Can not find analyzer assembly {assemblyPath}");
+                            return false;
+                        }
+                        analyzers.Add(assemblyPath);
+                    }
+                }
+                else
+                {
+                    // If library is a package we wan't to check analyzer/dotnet/cs directory for dll files
+                    // for project reference we just add output assembly
+                    if (dependency.Library is PackageDescription)
+                    {
+                        var analyzerPath = Path.Combine(dependency.Library.Path, "analyzers", "dotnet", compilerName.Substring(0, 2));
+                        if (Directory.Exists(analyzerPath))
+                        {
+                            analyzers.AddRange(Directory.GetFiles(analyzerPath, "*.dll"));
+                        }
+                    }
+                    else
+                    {
+                        analyzers.AddRange(assemblies);
+                    }
+                }
+            }
+            return true;
         }
 
         private static void RunScripts(ProjectContext context, string name, Dictionary<string, string> contextVariables)

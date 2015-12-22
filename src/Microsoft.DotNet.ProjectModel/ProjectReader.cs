@@ -526,10 +526,29 @@ namespace Microsoft.DotNet.ProjectModel
                 DelaySign = rawOptions.ValueAsNullableBoolean("delaySign"),
                 PublicSign = rawOptions.ValueAsNullableBoolean("publicSign"),
                 EmitEntryPoint = rawOptions.ValueAsNullableBoolean("emitEntryPoint"),
-                PreserveCompilationContext = rawOptions.ValueAsNullableBoolean("preserveCompilationContext")
+                PreserveCompilationContext = rawOptions.ValueAsNullableBoolean("preserveCompilationContext"),
+                Analysers = GetAnalyzerOptions(rawOptions.ValueAsJsonObject("analyzers"))
             };
         }
 
+        private static IEnumerable<AnalyzerOptions> GetAnalyzerOptions(JsonObject rawObject)
+        {
+            if (rawObject == null)
+            {
+                yield break;
+            }
+
+            foreach (var name in rawObject.Keys)
+            {
+                var analyserObject = rawObject.ValueAsJsonObject(name);
+
+                yield return new AnalyzerOptions()
+                {
+                    Name = name,
+                    Assemblies = analyserObject?.ValueAsStringArray("assemblies") ?? Enumerable.Empty<string>()
+                };
+            }
+        }
         private static string MakeDefaultTargetFrameworkDefine(NuGetFramework targetFramework)
         {
             var shortName = targetFramework.GetTwoDigitShortFolderName();

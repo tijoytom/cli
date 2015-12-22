@@ -29,9 +29,11 @@ namespace Microsoft.DotNet.Tools.Compiler.Csc
             AssemblyInfoOptions assemblyInfoOptions = null;
             string tempOutDir = null;
             IReadOnlyList<string> references = Array.Empty<string>();
+            IReadOnlyList<string> analyzers = Array.Empty<string>();
             IReadOnlyList<string> resources = Array.Empty<string>();
             IReadOnlyList<string> sources = Array.Empty<string>();
             string outputName = null;
+            string ruleSet = null;
             var help = false;
             var returnCode = 0;
             string helpText = null;
@@ -51,7 +53,11 @@ namespace Microsoft.DotNet.Tools.Compiler.Csc
 
                     syntax.DefineOption("out", ref outputName, "Name of the output assembly");
 
+                    syntax.DefineOption("ruleset", ref ruleSet, "Path to ruleset file");
+
                     syntax.DefineOptionList("reference", ref references, "Path to a compiler metadata reference");
+
+                    syntax.DefineOptionList("analyzer", ref analyzers, "Path to a compiler analyzer");
 
                     syntax.DefineOptionList("resource", ref resources, "Resources to embed");
 
@@ -96,7 +102,13 @@ namespace Microsoft.DotNet.Tools.Compiler.Csc
                 allArgs.Add($"-out:\"{outputName}\"");
             }
 
+            if (ruleSet != null)
+            {
+                allArgs.Add($"-ruleset:\"{ruleSet}\"");
+            }
+
             allArgs.AddRange(references.Select(r => $"-r:\"{r}\""));
+            allArgs.AddRange(analyzers.Select(a => $"-a:\"{a}\""));
             allArgs.AddRange(resources.Select(resource => $"-resource:{resource}"));
             allArgs.AddRange(sources.Select(s => $"\"{s}\""));
 
