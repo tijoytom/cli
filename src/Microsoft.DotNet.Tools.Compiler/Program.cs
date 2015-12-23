@@ -335,7 +335,7 @@ namespace Microsoft.DotNet.Tools.Compiler
                     assemblies = dependency.CompilationAssemblies.Select(r => r.ResolvedPath);
                 }
 
-                if (!TryAddAnalyzers(compilationOptions, dependency, analyzers, compilerName, assemblies))
+                if (!TryAddAnalyzers(compilationOptions, dependency, analyzers, compilerName, configuration, outputPath))
                 {
                     return false;
                 }
@@ -449,8 +449,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             return PrintSummary(diagnostics, sw, success);
         }
 
-        private static bool TryAddAnalyzers(CommonCompilerOptions compilationOptions, LibraryExport dependency, List<string> analyzers, string compilerName,
-            IEnumerable<string> assemblies)
+        private static bool TryAddAnalyzers(CommonCompilerOptions compilationOptions, LibraryExport dependency, List<string> analyzers, string compilerName, string configuration, string outputPath)
         {
             if (compilationOptions.Analyzers == null)
             {
@@ -490,7 +489,22 @@ namespace Microsoft.DotNet.Tools.Compiler
                     }
                     else
                     {
-                        analyzers.AddRange(assemblies);
+                        var analyzerFramework = NuGetFramework.Parse("dotnet5.4");
+
+                        var projectDescription = dependency.Library as ProjectDescription;
+                        var target = projectDescription.Project.GetTargetFrameworks()
+                            .FirstOrDefault(f => DefaultCompatibilityProvider.Instance.IsCompatible(f.FrameworkName, analyzerFramework));
+
+                        if (target == null)
+                        {
+                            Reporter.Error.WriteLine($"Can not find target compatible with {analyzerFramework} to be used for anylyzer in project {dependency.Library.Identity.Name}");
+                            return false;
+                        }
+
+                        var analyzerOutputPath = GetOutputPath(projectDescription.Project, target.FrameworkName, configuration, outputPath);
+                        var analyzerOutputFile = GetProjectOutput(projectDescription.Project, target.FrameworkName, analyzerOutputPath, outputPath);
+
+                        analyzers.Add(analyzerOutputFile);
                     }
                 }
             }
@@ -523,15 +537,20 @@ namespace Microsoft.DotNet.Tools.Compiler
 
         private static string GetOutputPath(ProjectContext context, string configuration, string outputOptionValue)
         {
+            return GetOutputPath(context.ProjectFile, context.TargetFramework, configuration, outputOptionValue);
+        }
+
+        private static string GetOutputPath(Project project, NuGetFramework targetFramework, string configuration, string outputOptionValue)
+        {
             var outputPath = string.Empty;
 
             if (string.IsNullOrEmpty(outputOptionValue))
             {
                 outputPath = Path.Combine(
-                    GetDefaultRootOutputPath(context, outputOptionValue),
+                    GetDefaultRootOutputPath(project, outputOptionValue),
                     Constants.BinDirectoryName,
                     configuration,
-                    context.TargetFramework.GetTwoDigitShortFolderName());
+                    targetFramework.GetTwoDigitShortFolderName());
             }
             else
             {
@@ -548,7 +567,7 @@ namespace Microsoft.DotNet.Tools.Compiler
             if (string.IsNullOrEmpty(intermediateOutputValue))
             {
                 intermediateOutputPath = Path.Combine(
-                    GetDefaultRootOutputPath(context, outputOptionValue),
+                    GetDefaultRootOutputPath(context.ProjectFile, outputOptionValue),
                     Constants.ObjDirectoryName,
                     configuration,
                     context.TargetFramework.GetTwoDigitShortFolderName());
@@ -561,13 +580,13 @@ namespace Microsoft.DotNet.Tools.Compiler
             return intermediateOutputPath;
         }
 
-        private static string GetDefaultRootOutputPath(ProjectContext context, string outputOptionValue)
+        private static string GetDefaultRootOutputPath(Project project, string outputOptionValue)
         {
             string rootOutputPath = string.Empty;
 
             if (string.IsNullOrEmpty(outputOptionValue))
             {
-                rootOutputPath = context.ProjectFile.ProjectDirectory;
+                rootOutputPath = project.ProjectDirectory;
             }
 
             return rootOutputPath;
