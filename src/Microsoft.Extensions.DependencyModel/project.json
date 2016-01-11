@@ -10,7 +10,8 @@
     "keyFile": "../../tools/Key.snk"
   },
   "dependencies": {
-    "Newtonsoft.Json": "7.0.1"
+    "Newtonsoft.Json": "7.0.1",
+    "NuGet.Packaging.Core.Types": "3.3.0"
   },
   "frameworks": {
     "net451": { },

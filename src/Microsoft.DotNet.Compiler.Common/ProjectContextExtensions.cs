@@ -12,6 +12,8 @@ using Microsoft.DotNet.ProjectModel;
 using Microsoft.DotNet.ProjectModel.Compilation;
 using Microsoft.DotNet.ProjectModel.Graph;
 using Microsoft.DotNet.Tools.Common;
+using Microsoft.Extensions.DependencyModel;
+using Microsoft.Extensions.DependencyModel.Serialization;
 using NuGet.Frameworks;
 
 namespace Microsoft.DotNet.Cli.Compiler.Common
@@ -20,7 +22,59 @@ namespace Microsoft.DotNet.Cli.Compiler.Common
     {
         public static string ProjectName(this ProjectContext context) => context.RootProject.Identity.Name;
 
-        public static void MakeCompilationOutputRunnable(this ProjectContext context, string outputPath, string configuration)
+        public static string GetOutputPath(this ProjectContext context, string configuration, string currentOutputPath)
+        {
+            var outputPath = string.Empty;
+
+            if (string.IsNullOrEmpty(currentOutputPath))
+            {
+                outputPath = Path.Combine(
+                    GetDefaultRootOutputPath(context, currentOutputPath),
+                    Constants.BinDirectoryName,
+                    configuration,
+                    context.TargetFramework.GetTwoDigitShortFolderName());
+            }
+            else
+            {
+                outputPath = currentOutputPath;
+            }
+
+            return outputPath;
+        }
+
+        public static string GetIntermediateOutputPath(this ProjectContext context, string configuration, string intermediateOutputValue, string currentOutputPath)
+        {
+            var intermediateOutputPath = string.Empty;
+
+            if (string.IsNullOrEmpty(intermediateOutputValue))
+            {
+                intermediateOutputPath = Path.Combine(
+                    GetDefaultRootOutputPath(context, currentOutputPath),
+                    Constants.ObjDirectoryName,
+                    configuration,
+                    context.TargetFramework.GetTwoDigitShortFolderName());
+            }
+            else
+            {
+                intermediateOutputPath = intermediateOutputValue;
+            }
+
+            return intermediateOutputPath;
+        }
+
+        public static string GetDefaultRootOutputPath(ProjectContext context, string currentOutputPath)
+        {
+            var rootOutputPath = string.Empty;
+
+            if (string.IsNullOrEmpty(currentOutputPath))
+            {
+                rootOutputPath = context.ProjectFile.ProjectDirectory;
+            }
+
+            return rootOutputPath;
+        }
+        
+        public static void MakeCompilationOutputRunnable(this ProjectContext context, string outputPath, string configuration, DependencyContext dependencyContext, bool preserveCompilationContext)
         {
             context
                 .ProjectFile
@@ -47,6 +101,10 @@ namespace Microsoft.DotNet.Cli.Compiler.Common
                 exporter.GetDependencies(LibraryType.Project)
                     .SelectMany(e => e.RuntimeAssets())
                     .CopyTo(outputPath);
+
+                // Generate runtime config file based on the dependency context
+                dependencyContext
+                    .Write(Path.Combine(outputPath, LockFile.RuntimeConfigFileName), preserveCompilationContext);
 
                 CoreHost.CopyTo(outputPath, context.ProjectFile.Name + Constants.ExeSuffix);
             }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.DotNet.ProjectModel.Graph;
+using Microsoft.Extensions.DependencyModel.Serialization;
 
 namespace Microsoft.DotNet.ProjectModel
 {
@@ -250,7 +251,7 @@ namespace Microsoft.DotNet.ProjectModel
                 currentEntry.ProjectFilePath = project.ProjectFilePath;
                 currentEntry.LastProjectFileWriteTime = File.GetLastWriteTime(currentEntry.ProjectFilePath);
 
-                var lockFilePath = Path.Combine(project.ProjectDirectory, LockFile.FileName);
+                var lockFilePath = Path.Combine(project.ProjectDirectory, LockFile.LockFileName);
                 if (File.Exists(lockFilePath))
                 {
                     currentEntry.LockFilePath = lockFilePath;

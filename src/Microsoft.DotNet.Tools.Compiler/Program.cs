@@ -16,6 +16,7 @@ using Microsoft.DotNet.ProjectModel.Utilities;
 using NuGet.Frameworks;
 using Microsoft.Extensions.DependencyModel;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.Extensions.DependencyModel.Serialization;
 
 namespace Microsoft.DotNet.Tools.Compiler
 {
@@ -243,23 +244,13 @@ namespace Microsoft.DotNet.Tools.Compiler
 
             compilerArgs.AddRange(references.Select(r => $"--reference:\"{r}\""));
 
+            // Create a dependency context
+            var rids = PlatformServices.Default.Runtime.GetAllCandidateRuntimeIdentifiers();
+            var runtimeContext = ProjectContext.Create(context.ProjectDirectory, context.TargetFramework, rids);
+            var dependencyContext = DependencyContextBuilder.Build(runtimeContext, args.ConfigValue);
+
             if (compilationOptions.PreserveCompilationContext == true)
             {
-                var dependencyContext = DependencyContextBuilder.Build(compilationOptions,
-                    exporter,
-                    args.ConfigValue,
-                    context.TargetFramework,
-                    context.RuntimeIdentifier);
-
-                var writer = new DependencyContextWriter();
-                var depsJsonFile = Path.Combine(intermediateOutputPath, context.ProjectFile.Name + "dotnet-compile.deps.json");
-                using (var fileStream = File.Create(depsJsonFile))
-                {
-                    writer.Write(dependencyContext, fileStream);
-                }
-
-                compilerArgs.Add($"--resource:\"{depsJsonFile},{context.ProjectFile.Name}.deps.json\"");
-
                 var refsFolder = Path.Combine(outputPath, "refs");
                 if (Directory.Exists(refsFolder))
                 {
@@ -338,11 +329,14 @@ namespace Microsoft.DotNet.Tools.Compiler
             bool generateBindingRedirects = false;
             if (success && !args.NoHostValue && compilationOptions.EmitEntryPoint.GetValueOrDefault())
             {
+<<<<<<< HEAD
                 generateBindingRedirects = true;
                 var rids = PlatformServices.Default.Runtime.GetAllCandidateRuntimeIdentifiers();
                 var runtimeContext = ProjectContext.Create(context.ProjectDirectory, context.TargetFramework, rids);
+=======
+>>>>>>> initial code to generate runtime config
                 runtimeContext
-                    .MakeCompilationOutputRunnable(outputPath, args.ConfigValue);
+                    .MakeCompilationOutputRunnable(outputPath, args.ConfigValue, dependencyContext, compilationOptions.PreserveCompilationContext ?? false);
             }
             else if (!string.IsNullOrEmpty(context.ProjectFile.TestRunner))
             {

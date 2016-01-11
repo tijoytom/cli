@@ -9,6 +9,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using Microsoft.DotNet.ProjectModel.Graph;
 using NuGet.Frameworks;
+using Microsoft.Extensions.DependencyModel.Serialization;
 using NuGet.Packaging;
 
 namespace Microsoft.DotNet.ProjectModel.Resolution
