@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.DotNet.ProjectModel.Compilation;
+using Microsoft.DotNet.ProjectModel.Graph;
 using Microsoft.DotNet.ProjectModel.Server.Helpers;
 using Microsoft.DotNet.ProjectModel.Server.Models;
 using NuGet.Frameworks;
@@ -11,7 +13,7 @@ using NuGet.Frameworks;
 namespace Microsoft.DotNet.ProjectModel.Server
 {
     internal class ProjectContextSnapshot
-    {        
+    {
         public string RootDependency { get; set; }
         public NuGetFramework TargetFramework { get; set; }
         public IReadOnlyList<string> SourceFiles { get; set; }
@@ -24,31 +26,31 @@ namespace Microsoft.DotNet.ProjectModel.Server
         public static ProjectContextSnapshot Create(ProjectContext context, string configuration, IEnumerable<string> currentSearchPaths)
         {
             var snapshot = new ProjectContextSnapshot();
-            
+
             var allDependencyDiagnostics = new List<DiagnosticMessage>();
             allDependencyDiagnostics.AddRange(context.LibraryManager.GetAllDiagnostics());
             allDependencyDiagnostics.AddRange(DependencyTypeChangeFinder.Diagnose(context, currentSearchPaths));
 
             var diagnosticsLookup = allDependencyDiagnostics.ToLookup(d => d.Source);
 
+            var allExports = context.CreateExporter(configuration).GetAllExports();
             var allSourceFiles = new List<string>(context.ProjectFile.Files.SourceFiles);
             var allFileReferences = new List<string>();
             var allProjectReferences = new List<ProjectReferenceDescription>();
             var allDependencies = new Dictionary<string, DependencyDescription>();
-            
-            foreach (var export in context.CreateExporter(configuration).GetDependencies())
+            var allLibrariesDictionary = BuildLibrariesDictionary(allExports);
+
+            foreach (var export in allExports)
             {
                 allSourceFiles.AddRange(export.SourceReferences);
                 allFileReferences.AddRange(export.CompilationAssemblies.Select(asset => asset.ResolvedPath));
 
-                var library = export.Library;
-                var diagnostics = diagnosticsLookup[library].ToList();
-                var description = DependencyDescription.Create(library, diagnostics);
+                var diagnostics = diagnosticsLookup[export.Library].ToList();
+                var description = DependencyDescription.Create(export.Library, diagnostics, allLibrariesDictionary);
                 allDependencies[description.Name] = description;
 
-                var projectDescription = library as ProjectDescription;
-
-                if (projectDescription != null)
+                var projectDescription = export.Library as ProjectDescription;
+                if (projectDescription != null && projectDescription.Identity.Name != context.ProjectFile.Name)
                 {
                     allProjectReferences.Add(ProjectReferenceDescription.Create(projectDescription));
                 }
@@ -64,6 +66,37 @@ namespace Microsoft.DotNet.ProjectModel.Server
             snapshot.Dependencies = allDependencies;
 
             return snapshot;
+        }
+
+        /// <summary>
+        /// Build a dictionary of LibraryDescription from a list of LibraryExports.
+        /// 
+        /// When one library name can be mapped to multiple LibraryExports the reference assembly library always win.
+        /// </summary>
+        private static IDictionary<string, LibraryDescription> BuildLibrariesDictionary(IEnumerable<LibraryExport> exports)
+        {
+            return exports
+                .ToLookup(export => export.Library.Identity.Name)
+                .Select(group =>
+                {
+                    if (group.Count() == 1)
+                    {
+                        return new KeyValuePair<string, LibraryDescription>(group.Key, group.First().Library);
+                    }
+                    else
+                    {
+                        var referenceAssemblyExport = group.FirstOrDefault(exp => exp.Library.Identity.Type == LibraryType.ReferenceAssembly);
+                        if (referenceAssemblyExport != null)
+                        {
+                            return new KeyValuePair<string, LibraryDescription>(group.Key, referenceAssemblyExport.Library);
+                        }
+                        else
+                        {
+                            return new KeyValuePair<string, LibraryDescription>(group.Key, group.First().Library);
+                        }
+                    }
+                })
+                .ToDictionary(pair => pair.Key, pair => pair.Value);
         }
     }
 }
