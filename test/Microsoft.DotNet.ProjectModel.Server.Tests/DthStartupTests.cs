@@ -21,6 +21,22 @@ namespace Microsoft.DotNet.ProjectModel.Server.Tests
         }
 
         [Fact]
+        public void Compare()
+        {
+            var projectPath = @"C:\Users\troyd\OneDrive\Documents\Visual Studio 2015\Projects\ConsoleApp1\src\ConsoleApp1";
+            Assert.NotNull(projectPath);
+
+            using (var server = new DthTestServer(_testHelper.LoggerFactory))
+            using (var client = new DthTestClient(server))
+            {
+                client.Initialize(projectPath);
+
+                Console.WriteLine(client.DrainTillFirst(MessageTypes.Dependencies).Payload.ToString());
+                Console.WriteLine(client.DrainTillFirst(MessageTypes.Dependencies).Payload.ToString());
+            }
+        }
+
+        [Fact]
         public void DthStartup_GetProjectInformation()
         {
             var projectPath = _testHelper.FindSampleProject("EmptyConsoleApp");
