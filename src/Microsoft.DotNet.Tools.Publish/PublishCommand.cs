@@ -109,10 +109,11 @@ namespace Microsoft.DotNet.Tools.Publish
                 new string[] {
                     "--framework",
                     $"{context.TargetFramework.DotNetFrameworkName}",
+                    "--runtime",
+                    context.RuntimeIdentifier,
                     "--configuration",
-                    $"{configuration}",
-                    "--no-host",
-                    $"{context.ProjectFile.ProjectDirectory}"
+                    configuration,
+                    context.ProjectFile.ProjectDirectory
                 })
                 .ForwardStdErr()
                 .ForwardStdOut()
@@ -137,44 +138,13 @@ namespace Microsoft.DotNet.Tools.Publish
 
             CopyContents(context, outputPath);
 
-            // Publish a host if this is an application
-            if (options.EmitEntryPoint.GetValueOrDefault())
-            {
-                Reporter.Verbose.WriteLine($"Making {context.ProjectFile.Name.Cyan()} runnable ...");
-                PublishHost(context, outputPath);
-            }
-
             RunScripts(context, ScriptNames.PostPublish, contextVariables);
 
             Reporter.Output.WriteLine($"Published to {outputPath}".Green().Bold());
 
             return true;
         }
-
-        private static int PublishHost(ProjectContext context, string outputPath)
-        {
-            if (context.TargetFramework.IsDesktop())
-            {
-                return 0;
-            }
-
-            foreach (var binaryName in Constants.HostBinaryNames)
-            {
-                var hostBinaryPath = Path.Combine(AppContext.BaseDirectory, binaryName);
-                if (!File.Exists(hostBinaryPath))
-                {
-                    Reporter.Error.WriteLine($"Cannot find {binaryName} in the dotnet directory.".Red());
-                    return 1;
-                }
-
-                var outputBinaryName = binaryName.Equals(Constants.HostExecutableName) ? (context.ProjectFile.Name + Constants.ExeSuffix) : binaryName;
-                var outputBinaryPath = Path.Combine(outputPath, outputBinaryName);
-
-                File.Copy(hostBinaryPath, outputBinaryPath, overwrite: true);
-            }
-
-            return 0;
-        }
+        
         private static void PublishFiles(IEnumerable<string> files, string outputPath)
         {
             foreach (var file in files)

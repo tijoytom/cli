@@ -34,13 +34,19 @@ namespace Microsoft.DotNet.Cli.Compiler.Common
 
             if (context.TargetFramework.IsDesktop())
             {
+                // On full framework, copy all dependencies to the output path
                 exporter
                     .GetDependencies()
                     .SelectMany(e => e.RuntimeAssets())
                     .CopyTo(outputPath);
+                
+                // Generate binding redirects
+                var outputName = context.GetOutputPathCalculator(outputPath).GetAssemblyPath(configuration);
+                context.GenerateBindingRedirects(exporter, outputName);
             }
             else
             {
+                // On core clr, only copy project references
                 exporter
                     .GetDependencies(LibraryType.Package)
                     .WriteDepsTo(Path.Combine(outputPath, context.ProjectFile.Name + FileNameSuffixes.Deps));
@@ -49,6 +55,7 @@ namespace Microsoft.DotNet.Cli.Compiler.Common
                     .SelectMany(e => e.RuntimeAssets())
                     .CopyTo(outputPath);
 
+                // TODO: Pick a host based on the RID
                 CoreHost.CopyTo(outputPath, context.ProjectFile.Name + Constants.ExeSuffix);
             }
         }

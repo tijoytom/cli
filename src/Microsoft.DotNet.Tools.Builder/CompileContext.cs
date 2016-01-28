@@ -58,9 +58,7 @@ namespace Microsoft.DotNet.Tools.Build
             {
                 if (incremental)
                 {
-                    var dependencyProjectContext = ProjectContext.Create(dependency.Path, dependency.Framework);
-
-                    if (!DependencyNeedsRebuilding(dependencyProjectContext, new ProjectDependenciesFacade(dependencyProjectContext, _args.ConfigValue)))
+                    if (!NeedsRebuilding(dependency))
                     {
                         continue;
                     }
@@ -86,9 +84,12 @@ namespace Microsoft.DotNet.Tools.Build
             return success;
         }
 
-        private bool DependencyNeedsRebuilding(ProjectContext project, ProjectDependenciesFacade dependencies)
+        private bool NeedsRebuilding(ProjectDescription projectDependency)
         {
-            return NeedsRebuilding(project, dependencies, buildOutputPath: null, intermediateOutputPath: null);
+            var projectContext = ProjectContext.Create(projectDependency.Path, projectDependency.Framework);
+            var dependencies = new ProjectDependenciesFacade(projectContext, _args.ConfigValue);
+            
+            return NeedsRebuilding(projectContext, dependencies, buildOutputPath: null, intermediateOutputPath: null);
         }
 
         private bool NeedsRebuilding(ProjectContext project, ProjectDependenciesFacade dependencies)
@@ -275,14 +276,11 @@ namespace Microsoft.DotNet.Tools.Build
 
             args.Add("--framework");
             args.Add($"{projectDependency.Framework}");
+            // Today compile time assets don't vary by RID so it doesn't need flow
+            // to dependencies.
             args.Add("--configuration");
             args.Add(_args.ConfigValue);
             args.Add(projectDependency.Project.ProjectDirectory);
-
-            if (_args.NoHostValue)
-            {
-                args.Add("--no-host");
-            }
 
             var compileResult = Command.Create("dotnet-compile", args)
                 .ForwardStdOut()
@@ -298,17 +296,17 @@ namespace Microsoft.DotNet.Tools.Build
             var args = new List<string>();
             args.Add("--framework");
             args.Add(_rootProject.TargetFramework.ToString());
+            if (!string.IsNullOrEmpty(_args.RuntimeValue))
+            {
+                args.Add("--runtime");
+                args.Add(_args.RuntimeValue);
+            }
             args.Add("--configuration");
             args.Add(_args.ConfigValue);
             args.Add("--output");
             args.Add(_args.OutputValue);
             args.Add("--temp-output");
             args.Add(_args.IntermediateValue);
-
-            if (_args.NoHostValue)
-            {
-                args.Add("--no-host");
-            }
 
             //native args
             if (_args.IsNativeValue)

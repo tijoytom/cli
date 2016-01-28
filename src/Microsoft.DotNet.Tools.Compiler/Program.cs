@@ -330,35 +330,28 @@ namespace Microsoft.DotNet.Tools.Compiler
                 success &= GenerateCultureResourceAssemblies(context.ProjectFile, dependencies, outputPath);
             }
 
-            bool generateBindingRedirects = false;
-            if (success && !args.NoHostValue && compilationOptions.EmitEntryPoint.GetValueOrDefault())
+            if (success)
             {
-                generateBindingRedirects = true;
-                var rids = PlatformServices.Default.Runtime.GetAllCandidateRuntimeIdentifiers();
-                var runtimeContext = ProjectContext.Create(context.ProjectDirectory, context.TargetFramework, rids);
-                runtimeContext
-                    .MakeCompilationOutputRunnable(outputPath, args.ConfigValue);
-            }
-            else if (!string.IsNullOrEmpty(context.ProjectFile.TestRunner))
-            {
-                generateBindingRedirects = true;
-                var projectContext =
-                    ProjectContext.Create(context.ProjectDirectory, context.TargetFramework,
-                        new[] { PlatformServices.Default.Runtime.GetLegacyRestoreRuntimeIdentifier() });
-
-                // Don't generate a deps file if we're on desktop
-                if (!context.TargetFramework.IsDesktop())
+                // TODO: Make this opt in via another mechanism
+                var makeRunnable = compilationOptions.EmitEntryPoint.GetValueOrDefault() || 
+                                   !string.IsNullOrEmpty(context.ProjectFile.TestRunner);
+                if (makeRunnable)
                 {
-                    projectContext
-                        .CreateExporter(args.ConfigValue)
-                        .GetDependencies(LibraryType.Package)
-                        .WriteDepsTo(Path.Combine(outputPath, projectContext.ProjectFile.Name + FileNameSuffixes.Deps));
-                }
-            }
+                    var rids = new List<string>(); 
+                    
+                    if (!string.IsNullOrEmpty(args.RuntimeValue))
+                    {
+                        rids.Add(args.RuntimeValue);
+                    }
+                    else
+                    {
+                        rids.AddRange(PlatformServices.Default.Runtime.GetAllCandidateRuntimeIdentifiers());
+                    }
 
-            if (generateBindingRedirects && context.TargetFramework.IsDesktop())
-            {
-                context.GenerateBindingRedirects(exporter, outputName);
+                    var runtimeContext = ProjectContext.Create(context.ProjectDirectory, context.TargetFramework, rids);
+
+                    runtimeContext.MakeCompilationOutputRunnable(outputPath, args.ConfigValue);
+                }
             }
 
             return PrintSummary(diagnostics, sw, success);
