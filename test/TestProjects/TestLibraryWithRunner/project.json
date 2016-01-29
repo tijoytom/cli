@@ -3,7 +3,7 @@
     "testRunner": "xunit",
     "dependencies": {
         "Microsoft.Extensions.DependencyModel": "1.0.0-*",
-        "Newtonsoft.Json": "6.0.0"
+        "Newtonsoft.Json": "7.0.1"
     },
 
     "frameworks": {

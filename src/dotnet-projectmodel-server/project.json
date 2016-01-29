@@ -13,8 +13,8 @@
             "type": "build",
             "version": "1.0.0-*"
         },
-        "Microsoft.Extensions.Logging": "1.0.0-rc2-16011",
-        "Microsoft.Extensions.Logging.Console": "1.0.0-rc2-16011",
+        "Microsoft.Extensions.Logging": "1.0.0-rc2-16034",
+        "Microsoft.Extensions.Logging.Console": "1.0.0-rc2-16034",
         "Newtonsoft.Json": "7.0.1"
     },
     "frameworks": {
