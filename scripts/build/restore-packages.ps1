@@ -9,5 +9,5 @@
 # NOTE(anurse): I had to remove --quiet, because NuGet3 is too quiet when that's provided :(
 header "Restoring packages"
 
-& dotnet restore "$RepoRoot\src"
-& dotnet restore "$RepoRoot\tools"
+& dotnet restore "$RepoRoot\src" --runtime "$Rid"
+& dotnet restore "$RepoRoot\tools" --runtime "$Rid"

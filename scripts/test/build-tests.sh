@@ -19,7 +19,7 @@ source "$DIR/../common/_common.sh"
 
 for project in loadTestList()
 do
-    dotnet publish --framework "dnxcore50" --output "$TestBinRoot" --configuration "$CONFIGURATION" "$REPOROOT/test/$project"
+    dotnet publish --framework "dnxcore50" --runtime "$Rid" --output "$TestBinRoot" --configuration "$CONFIGURATION" "$REPOROOT/test/$project"
 done
 
 # TODO: Remove this when publish paths change back

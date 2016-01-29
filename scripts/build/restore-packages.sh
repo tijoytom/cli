@@ -18,5 +18,5 @@ source "$DIR/../common/_common.sh"
 
 header "Restoring packages"
 
-dotnet restore "$REPOROOT/src"
-dotnet restore "$REPOROOT/tools"
+dotnet restore "$REPOROOT/src" --runtime "$RID"
+dotnet restore "$REPOROOT/tools" --runtime "$RID"
