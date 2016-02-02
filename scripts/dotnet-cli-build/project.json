@@ -6,7 +6,8 @@
     },
 
     "dependencies": {
-        "NETStandard.Library": "1.0.0-rc2-23704"
+        "NETStandard.Library": "1.0.0-rc2-23728",
+        "Microsoft.DotNet.Cli.Build.Framework": { "target": "project" }
     },
 
     "frameworks": {
