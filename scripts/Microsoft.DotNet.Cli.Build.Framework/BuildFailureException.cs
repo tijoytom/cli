@@ -15,6 +15,11 @@ namespace Microsoft.DotNet.Cli.Build.Framework
             Target = target;
         }
 
+        public BuildFailureException(BuildTarget target, Exception innerException) : base($"The '{target.Name}' target failed", innerException)
+        {
+            Target = target;
+        }
+
         public BuildFailureException(string message) : base(message)
         {
         }

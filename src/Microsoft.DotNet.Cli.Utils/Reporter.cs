@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 namespace Microsoft.DotNet.Cli.Utils
 {
     // Stupid-simple console manager
-    public class Reporter
+    internal class Reporter
     {
         private static readonly Reporter Null = new Reporter(console: null);
         private static object _lock = new object();

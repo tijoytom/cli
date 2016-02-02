@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -12,9 +13,16 @@ namespace Microsoft.DotNet.Cli.Build.Framework
 
         public IList<TargetOverride> _overrides = new List<TargetOverride>();
 
-        public static BuildSetup Create()
+        public string ProductName { get; }
+
+        public BuildSetup(string productName)
         {
-            return new BuildSetup();
+            ProductName = productName;
+        }
+
+        public static BuildSetup Create(string productName)
+        {
+            return new BuildSetup(productName);
         }
 
         public BuildSetup UseTargets(IEnumerable<BuildTarget> targets)
@@ -46,15 +54,17 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         {
             DebugHelper.HandleDebugSwitch(ref args);
 
+            Reporter.Output.WriteBanner($"Building {ProductName}");
+
             if (_overrides.Any())
             {
                 foreach (var targetOverride in _overrides)
                 {
-                    Reporter.Verbose.WriteLine($"Target {targetOverride.Name} from {targetOverride.OriginalSource} was overridden in {targetOverride.OverrideSource}");
+                    Reporter.Verbose.WriteLine($"Target {targetOverride.Name} from {targetOverride.OriginalSource} was overridden in {targetOverride.OverrideSource}".Black());
                 }
             }
 
-            var context = new BuildContext(_targets);
+            var context = new BuildContext(_targets, Directory.GetCurrentDirectory());
             try
             {
                 context.RunTarget(BuildContext.DefaultTarget);

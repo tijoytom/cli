@@ -9,12 +9,12 @@ namespace Microsoft.DotNet.Cli.Build.Framework
     {
         private IDictionary<string, BuildTargetResult> _dependencyResults;
 
-        public BuildContext Context { get; }
+        public BuildContext BuildContext { get; }
         public BuildTarget Target { get; }
 
-        public BuildTargetContext(BuildContext context, BuildTarget target, IDictionary<string, BuildTargetResult> dependencyResults)
+        public BuildTargetContext(BuildContext buildContext, BuildTarget target, IDictionary<string, BuildTargetResult> dependencyResults)
         {
-            Context = context;
+            BuildContext = buildContext;
             Target = target;
             _dependencyResults = dependencyResults;
         }
@@ -30,5 +30,7 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         {
             return new BuildTargetResult(Target, success: false, errorMessage: errorMessage);
         }
+
+        public void Info(string message) => BuildContext.Info(message);
     }
 }

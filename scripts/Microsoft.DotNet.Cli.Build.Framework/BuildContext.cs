@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.DotNet.Cli.Build.Framework
 {
@@ -12,13 +13,49 @@ namespace Microsoft.DotNet.Cli.Build.Framework
 
         private int _maxTargetLen;
 
+
         public IDictionary<string, BuildTarget> Targets { get; }
 
-        public BuildContext(IDictionary<string, BuildTarget> targets)
+        public string Platform { get; }
+        public string Uname { get; }
+        public IDictionary<string, object> Properties = new Dictionary<string, object>();
+
+        public string BuildDirectory { get; }
+
+        public object this[string name]
+        {
+            get { return Properties[name]; }
+            set { Properties[name] = value; }
+        }
+
+        public BuildContext(IDictionary<string, BuildTarget> targets, string buildDirectory)
         {
             Targets = targets;
+            BuildDirectory = buildDirectory;
             _maxTargetLen = targets.Values.Select(t => t.Name.Length).Max();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Platform = "Windows";
+                Uname = "Windows";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Platform = "Linux";
+                Uname = "Linux";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Platform = "OSX";
+                Uname = "Darwin";
+            }
+            else
+            {
+                Platform = "Unknown";
+                Uname = "Unknown";
+            }
         }
+
         public BuildTargetResult RunTarget(string name) => RunTarget(name, force: false);
 
         public BuildTargetResult RunTarget(string name, bool force)
@@ -44,6 +81,11 @@ namespace Microsoft.DotNet.Cli.Build.Framework
             return result;
         }
 
+        public void Info(string message)
+        {
+            Reporter.Output.WriteLine("info".Green() + $" : {message}");
+        }
+
         private BuildTargetResult ExecTarget(BuildTarget target)
         {
             // Run the dependencies
@@ -58,7 +100,14 @@ namespace Microsoft.DotNet.Cli.Build.Framework
             Reporter.Output.WriteLine("TARGET ".Green() + $"{target.Name.PadRight(_maxTargetLen + 2).Yellow()} ({target.Source.White()})");
             if (target.Body != null)
             {
-                return target.Body(new BuildTargetContext(this, target, dependencyResults));
+                try
+                {
+                    return target.Body(new BuildTargetContext(this, target, dependencyResults));
+                }
+                catch (Exception ex)
+                {
+                    return new BuildTargetResult(target, success: false, exception: ex);
+                }
             }
             else
             {
