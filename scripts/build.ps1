@@ -33,4 +33,5 @@ $result = dotnet build "$PSScriptRoot\dotnet-cli-build"
 if($LASTEXITCODE -ne 0) { $result | ForEach-Object { Write-Host $_ }; throw "Failed to compile build scripts" }
 
 # Run the builder
+$env:DOTNET_HOME="$env:DOTNET_INSTALL_DIR\cli"
 & "$PSScriptRoot\dotnet-cli-build\bin\Debug\dnxcore50\dotnet-cli-build.exe" @args

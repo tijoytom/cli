@@ -32,9 +32,7 @@ namespace Microsoft.DotNet.Cli.Build.Framework
             var psi = new ProcessStartInfo()
             {
                 FileName = executable,
-                Arguments = args,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true
+                Arguments = args
             };
 
             _process = new Process()
@@ -43,9 +41,14 @@ namespace Microsoft.DotNet.Cli.Build.Framework
             };
         }
 
+        public static Command Create(string executable, params string[] args)
+        {
+            return Create(executable, ArgumentEscaper.EscapeAndConcatenateArgArrayForProcessStart(args));
+        }
+
         public static Command Create(string executable, IEnumerable<string> args)
         {
-            return Create(executable, string.Join(" ", args));
+            return Create(executable, ArgumentEscaper.EscapeAndConcatenateArgArrayForProcessStart(args));
         }
 
         public static Command Create(string executable, string args)
@@ -135,15 +138,21 @@ namespace Microsoft.DotNet.Cli.Build.Framework
             ThrowIfRunning();
             _running = true;
 
-            _process.OutputDataReceived += (sender, args) =>
+            if (_process.StartInfo.RedirectStandardOutput)
             {
-                ProcessData(args.Data, _stdOutCapture, _stdOutForward, _stdOutHandler);
-            };
+                _process.OutputDataReceived += (sender, args) =>
+                {
+                    ProcessData(args.Data, _stdOutCapture, _stdOutForward, _stdOutHandler);
+                };
+            }
 
-            _process.ErrorDataReceived += (sender, args) =>
+            if (_process.StartInfo.RedirectStandardError)
             {
-                ProcessData(args.Data, _stdErrCapture, _stdErrForward, _stdErrHandler);
-            };
+                _process.ErrorDataReceived += (sender, args) =>
+                {
+                    ProcessData(args.Data, _stdErrCapture, _stdErrForward, _stdErrHandler);
+                };
+            }
 
             _process.EnableRaisingEvents = true;
 
@@ -151,8 +160,16 @@ namespace Microsoft.DotNet.Cli.Build.Framework
             Reporter.Verbose.WriteLine($"> {FormatProcessInfo(_process.StartInfo)}".Black());
 
             _process.Start();
-            _process.BeginOutputReadLine();
-            _process.BeginErrorReadLine();
+
+            if (_process.StartInfo.RedirectStandardOutput)
+            {
+                _process.BeginOutputReadLine();
+            }
+
+            if (_process.StartInfo.RedirectStandardError)
+            {
+                _process.BeginErrorReadLine();
+            }
 
             _process.WaitForExit();
 
@@ -190,6 +207,7 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         public Command CaptureStdOut()
         {
             ThrowIfRunning();
+            _process.StartInfo.RedirectStandardOutput = true;
             _stdOutCapture = new StringWriter();
             return this;
         }
@@ -197,6 +215,7 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         public Command CaptureStdErr()
         {
             ThrowIfRunning();
+            _process.StartInfo.RedirectStandardError = true;
             _stdErrCapture = new StringWriter();
             return this;
         }
@@ -204,6 +223,7 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         public Command ForwardStdOut(TextWriter to = null)
         {
             ThrowIfRunning();
+            _process.StartInfo.RedirectStandardOutput = true;
             if (to == null)
             {
                 _stdOutForward = Reporter.Output.WriteLine;
@@ -218,6 +238,7 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         public Command ForwardStdErr(TextWriter to = null)
         {
             ThrowIfRunning();
+            _process.StartInfo.RedirectStandardError = true;
             if (to == null)
             {
                 _stdErrForward = Reporter.Error.WriteLine;
@@ -232,6 +253,7 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         public Command OnOutputLine(Action<string> handler)
         {
             ThrowIfRunning();
+            _process.StartInfo.RedirectStandardOutput = true;
             if (_stdOutHandler != null)
             {
                 throw new InvalidOperationException("Already handling stdout!");
@@ -243,6 +265,7 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         public Command OnErrorLine(Action<string> handler)
         {
             ThrowIfRunning();
+            _process.StartInfo.RedirectStandardError = true;
             if (_stdErrHandler != null)
             {
                 throw new InvalidOperationException("Already handling stderr!");
@@ -290,11 +313,6 @@ namespace Microsoft.DotNet.Cli.Build.Framework
             {
                 handler(data);
             }
-        }
-
-        public static object Create(object combine)
-        {
-            throw new NotImplementedException();
         }
     }
 }

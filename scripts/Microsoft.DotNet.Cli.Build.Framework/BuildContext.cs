@@ -16,15 +16,13 @@ namespace Microsoft.DotNet.Cli.Build.Framework
 
         public IDictionary<string, BuildTarget> Targets { get; }
 
-        public string Platform { get; }
-        public string Uname { get; }
         public IDictionary<string, object> Properties = new Dictionary<string, object>();
 
         public string BuildDirectory { get; }
 
         public object this[string name]
         {
-            get { return Properties[name]; }
+            get { return Properties.ContainsKey(name) ? Properties[name] : null; }
             set { Properties[name] = value; }
         }
 
@@ -33,27 +31,6 @@ namespace Microsoft.DotNet.Cli.Build.Framework
             Targets = targets;
             BuildDirectory = buildDirectory;
             _maxTargetLen = targets.Values.Select(t => t.Name.Length).Max();
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Platform = "Windows";
-                Uname = "Windows";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                Platform = "Linux";
-                Uname = "Linux";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                Platform = "OSX";
-                Uname = "Darwin";
-            }
-            else
-            {
-                Platform = "Unknown";
-                Uname = "Unknown";
-            }
         }
 
         public BuildTargetResult RunTarget(string name) => RunTarget(name, force: false);
@@ -84,6 +61,11 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         public void Info(string message)
         {
             Reporter.Output.WriteLine("info".Green() + $" : {message}");
+        }
+
+        public void Warn(string message)
+        {
+            Reporter.Output.WriteLine("warn".Yellow() + $" : {message}");
         }
 
         private BuildTargetResult ExecTarget(BuildTarget target)

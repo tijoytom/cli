@@ -2,11 +2,16 @@
 using System.IO;
 using System.Linq;
 using System;
+using Microsoft.Extensions.PlatformAbstractions;
 
 namespace Microsoft.DotNet.Cli.Build
 {
     internal class DotNetCli
     {
+        public static readonly DotNetCli Stage0 = new DotNetCli(Path.Combine(Directory.GetCurrentDirectory(), ".dotnet_stage0", PlatformServices.Default.Runtime.OperatingSystemPlatform.ToString(), "cli", "bin"));
+        public static readonly DotNetCli Stage1 = new DotNetCli(Path.Combine(OutputDir.Stage1, "bin"));
+        public static readonly DotNetCli Stage2 = new DotNetCli(Path.Combine(OutputDir.Stage2, "bin"));
+
         public string BinPath { get; }
 
         public DotNetCli(string binPath)
@@ -16,39 +21,12 @@ namespace Microsoft.DotNet.Cli.Build
 
         public Command Exec(string command, params string[] args)
         {
-            return Command.Create(Path.Combine(BinPath, "dotnet.exe"), Enumerable.Concat(new[] { command }, args))
-                .OnErrorLine(e =>
-                {
-                    Reprettify(Reporter.Error, e);
-                })
-                .OnOutputLine(e =>
-                {
-                    Reprettify(Reporter.Output, e);
-                });
+            return Command.Create(Path.Combine(BinPath, "dotnet.exe"), Enumerable.Concat(new[] { command }, args));
         }
 
         public Command Restore(params string[] args) => Exec("restore", args);
         public Command Build(params string[] args) => Exec("build", args);
         public Command Test(params string[] args) => Exec("test", args);
-
-        private void Reprettify(Reporter output, string str)
-        {
-            var newVal = str;
-            if(str.StartsWith("info"))
-            {
-                newVal = "info".Green() + str.Substring(4);
-            }
-            else if(str.StartsWith("warn"))
-            {
-                newVal = "warn".Yellow() + str.Substring(4);
-            }
-            else if(str.StartsWith("error"))
-            {
-                newVal = "error".Red() + str.Substring(5);
-            }
-
-            output.WriteLine(newVal);
-        }
-
+        public Command Publish(params string[] args) => Exec("publish", args);
     }
 }

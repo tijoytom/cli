@@ -32,5 +32,6 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         }
 
         public void Info(string message) => BuildContext.Info(message);
+        public void Warn(string message) => BuildContext.Warn(message);
     }
 }

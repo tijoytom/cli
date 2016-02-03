@@ -8,7 +8,7 @@ namespace Microsoft.DotNet.Cli.Build.Framework
     public static class Constants
     {
         //public static readonly string ProjectFileName = "project.json";
-        //public static readonly string ExeSuffix = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : string.Empty;
+        public static readonly string ExeSuffix = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : string.Empty;
 
         // Priority order of runnable suffixes to look for and run
         public static readonly string[] RunnableSuffixes = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
@@ -19,8 +19,10 @@ namespace Microsoft.DotNet.Cli.Build.Framework
         //public static readonly string BinDirectoryName = "bin";
         //public static readonly string ObjDirectoryName = "obj";
 
-        //public static readonly string DynamicLibSuffix = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".dll"   : 
-        //                                                 RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? ".dylib" : ".so";
+        public static readonly string DynamicLibPrefix = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "" : "lib";
+
+        public static readonly string DynamicLibSuffix = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".dll" :
+                                                         RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? ".dylib" : ".so";
 
         //public static readonly string LibCoreClrName = (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "coreclr" : "libcoreclr") + DynamicLibSuffix;
 

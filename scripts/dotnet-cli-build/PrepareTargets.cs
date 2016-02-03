@@ -1,25 +1,34 @@
 ﻿using Microsoft.DotNet.Cli.Build.Framework;
+using System;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Microsoft.DotNet.Cli.Build
 {
     public class PrepareTargets
     {
-        [Target("LocateStage0,RestorePackages")]
-        public static BuildTargetResult Prepare(BuildTargetContext c) => c.Success();
+        [Target("CheckPrereqs,LocateStage0,RestorePackages")]
+        public static BuildTargetResult Prepare(BuildTargetContext c)
+        {
+            if(c.BuildContext["Configuration"] == null)
+            {
+                c.BuildContext["Configuration"] = "Debug";
+            }
+
+            c.Info($"Building {c.BuildContext["Configuration"]} to: {OutputDir.Base}");
+            return c.Success();
+        }
 
         [Target]
         public static BuildTargetResult LocateStage0(BuildTargetContext c)
         {
             // We should have been run in the repo root, so locate the stage 0 relative to current directory
-            var stage0 = Path.Combine(Directory.GetCurrentDirectory(), ".dotnet_stage0", c.BuildContext.Uname, "cli", "bin");
+            var stage0 = DotNetCli.Stage0.BinPath;
 
-            if(!Directory.Exists(stage0))
+            if (!Directory.Exists(stage0))
             {
                 return c.Failed($"Stage 0 directory does not exist: {stage0}");
             }
-
-            c.BuildContext["Stage0Bin"] = stage0;
 
             // Identify the version
             var version = File.ReadAllLines(Path.Combine(stage0, "..", ".version"));
@@ -29,12 +38,44 @@ namespace Microsoft.DotNet.Cli.Build
         }
 
         [Target]
+        public static BuildTargetResult CheckPrereqs(BuildTargetContext c)
+        {
+            try
+            {
+                Command.Create("cmake", "--version")
+                    .CaptureStdOut()
+                    .CaptureStdErr()
+                    .Execute();
+            }
+            catch (Exception ex)
+            {
+                string message = $@"Error running cmake: {ex.Message}
+cmake is required to build the native host 'corehost'";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    message += Environment.NewLine + "Download it from https://www.cmake.org";
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    message += Environment.NewLine + "Ubuntu: 'sudo apt-get install cmake'";
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    message += Environment.NewLine + "OS X w/Homebrew: 'brew install cmake'";
+                }
+                return c.Failed(message);
+            }
+
+            return c.Success();
+        }
+
+        [Target]
         public static BuildTargetResult RestorePackages(BuildTargetContext c)
         {
-            var dotnet = new DotNetCli((string)c.BuildContext["Stage0Bin"]);
+            var dotnet = DotNetCli.Stage0;
 
-            dotnet.Restore(Path.Combine(c.BuildContext.BuildDirectory, "src")).Execute().EnsureSuccessful();
-            dotnet.Restore(Path.Combine(c.BuildContext.BuildDirectory, "tools")).Execute().EnsureSuccessful();
+            dotnet.Restore().WorkingDirectory(Path.Combine(c.BuildContext.BuildDirectory, "src")).Execute().EnsureSuccessful();
+            dotnet.Restore().WorkingDirectory(Path.Combine(c.BuildContext.BuildDirectory, "tools")).Execute().EnsureSuccessful();
 
             return c.Success();
         }
