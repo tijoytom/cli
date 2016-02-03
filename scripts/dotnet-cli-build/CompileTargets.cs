@@ -137,6 +137,8 @@ namespace Microsoft.DotNet.Cli.Build
         {
             Directory.Delete(outputDir, recursive: true);
 
+            dotnet.SetDotNetHome();
+
             var configuration = (string)c.BuildContext["Configuration"];
             var binDir = Path.Combine(outputDir, "bin");
             var runtimeOutputDir = Path.Combine(outputDir, "runtime", "coreclr");
